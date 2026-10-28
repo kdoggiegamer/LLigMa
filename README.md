@@ -10,7 +10,13 @@ LLigMa is an experimental personal language-model project. This repository curre
 | 2.0nt | Archive published; detailed version notes are not yet available. | [LLigMa-2.0nt.zip](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/raw/refs/heads/main/LLigMa-2.0nt.zip) |
 | 3.0nt | Archive published as a prerelease. | [LLigMa 3.0nt.zip](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/raw/refs/heads/main/LLigMa%203.0nt.zip) · [Release notes](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/releases/tag/v3.0nt) |
 
-In the version names, `nt` means “not trained.” Earlier commit notes also define `bt` as “barely trained” and `ft` as “fully trained.” These labels describe training status; they are not performance guarantees.
+## Training labels
+
+- `nt`: not trained
+- `ft`: fully trained
+- `bt`: barely trained — trained poorly on my limited hardware, a GTX 1650
+
+These labels describe training status; they are not performance guarantees.
 
 ### LLigMa 3.0nt
 
