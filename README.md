@@ -24,13 +24,15 @@ The published project overview describes 3.0 as an experimental decoder-only lan
 
 The `lligma_3_0_2b` configuration is not suitable for ordinary consumer hardware. Its total parameter count is substantially above 2B because of its routed experts. The project overview mentions a small debug configuration for smoke training and integration testing.
 
+> **Hardware reality check:** The GTX 1650 Max-Q is brave, but this configuration is a lot to ask of it. The fans may achieve consciousness before the model does. Use the small debug configuration for experiments on modest hardware; “it starts” and “it trains comfortably” are two very different milestones.
+
 ### LLigMa 1.0 and 2.0nt
 
 The repository has no 1.0 archive at present. The 2.0nt archive is available above, but version-specific architecture, setup, and usage notes have not yet been documented here. Notes will be added when those details can be verified from the uploaded source.
 
 ## Future releases
 
-When a new version is uploaded, this page will be updated with its archive or release link, what changed, setup and usage instructions, and known limitations based on the files provided.
+When a new version is uploaded, this page will be updated with its archive or release link, what changed, setup and usage instructions, and known limitations based on the files provided. Ambitious roadmap items will be treated as goals until the code, hardware requirements, and results can back them up.
 
 ## Development setup
 
