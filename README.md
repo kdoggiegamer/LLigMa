@@ -7,8 +7,8 @@ LLigMa is an experimental personal language-model project. This repository curre
 | Version | Status | Download |
 | --- | --- | --- |
 | 1.0 | No archive is currently published in this repository. | — |
-| 2.0nt | Archive published; detailed version notes are not yet available. | [LLigMa-2.0nt.zip](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/raw/refs/heads/main/LLigMa-2.0nt.zip) |
-| 3.0nt | Archive published as a prerelease. | [LLigMa 3.0nt.zip](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/raw/refs/heads/main/LLigMa%203.0nt.zip) · [Release notes](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/releases/tag/v3.0nt) |
+| 2.0nt | Archive published; detailed version notes are not yet available. | [LLigMa-2.0nt.zip](https://github.com/kdoggiegamer/LLigMa/raw/refs/heads/main/LLigMa-2.0nt.zip) |
+| 3.0nt | Archive published as a prerelease. | [LLigMa 3.0nt.zip](https://github.com/kdoggiegamer/LLigMa/raw/refs/heads/main/LLigMa%203.0nt.zip) · [Release notes](https://github.com/kdoggiegamer/LLigMa/releases/tag/v3.0nt) |
 
 ## Training labels
 
