@@ -1,0 +1,9 @@
+torch>=2.2
+transformers>=4.45,<5
+datasets>=2.20,<5
+accelerate>=0.34
+tokenizers>=0.19
+safetensors>=0.4
+numpy>=1.26
+PyYAML>=6.0
+tqdm>=4.66
