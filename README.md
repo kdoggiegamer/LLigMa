@@ -1,51 +1,45 @@
 # LLigMa
 
-LLigMa is an experimental collection of language-model architectures, training utilities, and model-version repositories.
+LLigMa is an experimental personal language-model project. This repository currently distributes version archives and project documentation.
 
-## Version history
+## Available versions
 
-This repository brings together the LLigMa versions and their development history. Version notes are based on the material currently published here; earlier release details can be added as their source files and notes are uploaded.
+| Version | Status | Download |
+| --- | --- | --- |
+| 1.0 | No archive is currently published in this repository. | — |
+| 2.0nt | Archive published; detailed version notes are not yet available. | [LLigMa-2.0nt.zip](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/raw/refs/heads/main/LLigMa-2.0nt.zip) |
+| 3.0nt | Archive published as a prerelease. | [LLigMa 3.0nt.zip](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/raw/refs/heads/main/LLigMa%203.0nt.zip) · [Release notes](https://github.com/kdoggiegamer/LLigMa-All-Repositories-partially-untrained-/releases/tag/v3.0nt) |
 
-### LLigMa 1.0
+In the version names, `nt` means “not trained.” Earlier commit notes also define `bt` as “barely trained” and `ft` as “fully trained.” These labels describe training status; they are not performance guarantees.
 
-The original LLigMa version. A detailed description and archived source for 1.0 have not yet been added to this repository.
+### LLigMa 3.0nt
 
-### LLigMa 2.0
+The published project overview describes 3.0 as an experimental decoder-only language model with multi-head latent attention, rotary position embeddings, and a routed mixture-of-experts feed-forward stack. It is research code; no capable pretrained checkpoint or benchmark claim is included in the project overview.
 
-The second LLigMa version. A detailed description and archived source for 2.0 have not yet been added to this repository.
+The `lligma_3_0_2b` configuration is not suitable for ordinary consumer hardware. Its total parameter count is substantially above 2B because of its routed experts. The project overview mentions a small debug configuration for smoke training and integration testing.
 
-### LLigMa 3.0
+### LLigMa 1.0 and 2.0nt
 
-An experimental decoder-only language model implementation with multi-head latent attention, rotary position embeddings, and a routed mixture-of-experts feed-forward stack. The repository includes the 3.0nt archive. This is research code; no capable pretrained checkpoint or benchmark claim is included here.
-
-The original `lligma_3_0_2b` configuration is not suitable for ordinary consumer hardware. Its total parameter count is substantially above 2B because of its routed experts. A small debug configuration is provided for local smoke training and integration testing.
+The repository has no 1.0 archive at present. The 2.0nt archive is available above, but version-specific architecture, setup, and usage notes have not yet been documented here. Notes will be added when those details can be verified from the uploaded source.
 
 ## Future releases
 
-As new LLigMa versions are uploaded, their version notes, source links, and release information will be added here. Future entries will describe what changed, how to run the version, and any known limitations based on the uploaded materials.
-
-## Repository plan
-
-Each LLigMa version will keep its architecture, configuration, training entry points, conversion tools, and documentation in its own directory or repository. Model weights are kept separate from source code.
-
-Community-provided GGUF files are welcome when they include:
-
-- the source model/version and conversion settings
-- quantization type and context length
-- tokenizer compatibility details
-- a checksum and basic load test
-- license and redistribution terms
-
-A community GGUF does not imply an official or verified LLigMa release unless it is explicitly marked as verified.
+When a new version is uploaded, this page will be updated with its archive or release link, what changed, setup and usage instructions, and known limitations based on the files provided.
 
 ## Development setup
 
-Install a PyTorch build appropriate for your system, then install the project packages:
+The root `requirements.txt` lists Python dependencies for the project. Install a PyTorch build appropriate for your system, then run:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
+This installs dependencies only; it does not extract or launch a version archive. Follow version-specific instructions when they are included with the archive.
+
+## Community files
+
+Community-provided GGUF files may be shared when accompanied by the source model/version and conversion settings, quantization type, context length, tokenizer compatibility details, checksum, basic load test, and license/redistribution terms. A community file is not an official or verified LLigMa release unless explicitly marked as verified.
+
 ## License
 
-License terms will be added before a public model or weight release.
+No license is currently published. Until license terms are added, reuse and redistribution permissions are not specified. A license should be added before inviting redistribution of source code or model weights.
