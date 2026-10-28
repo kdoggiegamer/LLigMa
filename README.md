@@ -2,11 +2,27 @@
 
 LLigMa is an experimental collection of language-model architectures, training utilities, and model-version repositories.
 
-## Current status
+## Version history
 
-LLigMa 3.0 is an early decoder-only language model implementation with multi-head latent attention, rotary position embeddings, and a routed mixture-of-experts feed-forward stack. It is research code: no capable pretrained checkpoint or benchmark claim is included here.
+This repository brings together the LLigMa versions and their development history. Version notes are based on the material currently published here; earlier release details can be added as their source files and notes are uploaded.
+
+### LLigMa 1.0
+
+The original LLigMa version. A detailed description and archived source for 1.0 have not yet been added to this repository.
+
+### LLigMa 2.0
+
+The second LLigMa version. A detailed description and archived source for 2.0 have not yet been added to this repository.
+
+### LLigMa 3.0
+
+An experimental decoder-only language model implementation with multi-head latent attention, rotary position embeddings, and a routed mixture-of-experts feed-forward stack. The repository includes the 3.0nt archive. This is research code; no capable pretrained checkpoint or benchmark claim is included here.
 
 The original `lligma_3_0_2b` configuration is not suitable for ordinary consumer hardware. Its total parameter count is substantially above 2B because of its routed experts. A small debug configuration is provided for local smoke training and integration testing.
+
+## Future releases
+
+As new LLigMa versions are uploaded, their version notes, source links, and release information will be added here. Future entries will describe what changed, how to run the version, and any known limitations based on the uploaded materials.
 
 ## Repository plan
 
