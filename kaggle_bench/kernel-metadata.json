@@ -1,0 +1,13 @@
+{
+  "id": "angelodellamorte/lligma-bench",
+  "title": "lligma bench",
+  "code_file": "lligma-bench.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["angelodellamorte/lligma-code"],
+  "competition_sources": [],
+  "kernel_sources": ["angelodellamorte/lligma-prep"]
+}

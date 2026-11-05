@@ -1,0 +1,34 @@
+{"question":"Perché è utile alternare le colture nel corso degli anni?","subject":"agronomia","expect_doc":"agro.rotazione","must_include":["leguminose","Rhizobium","parassiti"]}
+{"question":"Che cosa è l'humus e perché è importante?","subject":"agronomia","expect_doc":"agro.humus","must_include":["sostanza organica","struttura","nutritivi"]}
+{"question":"Quali sono i principali microelementi e macroelementi?","subject":"agronomia","expect_doc":"agro.concimazione","must_include":["azoto","fosforo","potassio"]}
+{"question":"Spiega il goccia a goccia e la sua efficienza","subject":"agronomia","expect_doc":"agro.irrigazione","must_include":["goccia","radici","efficienza"]}
+{"question":"In che periodo si pota la vite e cosa si fa in estate?","subject":"agronomia","expect_doc":"agro.potatura","must_include":["inverno","riposo vegetativo","potatura verde"]}
+{"question":"Perché la vite europea viene innestata su portainnesti americani?","subject":"agronomia","expect_doc":"agro.innesto","must_include":["fillossera","portinnesto","resistenti"]}
+{"question":"Che cos'è la rotazione e come si chiama la tecnica di non lavorare il terreno?","subject":"agronomia","expect_doc":"agro.lavorazioni","must_include":["aratura","sodo","suola"]}
+{"question":"Quanti litri di latte produce una Frisona al giorno?","subject":"agronomia","expect_doc":"agro.zootecnia","must_include":["25","litri"]}
+{"question":"Come si chiama la tecnica di interrare una coltura ancora verde?","subject":"agronomia","expect_doc":"agro.organici","must_include":["sovescio"]}
+{"question":"Che differenza c'è fra peronospora e oidio sulla vite?","subject":"agronomia","expect_doc":"agro.difesa","must_include":["umidità","macchie d'olio","polvere biancastra"]}
+{"question":"Quali sono le tappe della respirazione cellulare e quanti ATP Produce?","subject":"biologia","expect_doc":"bio.respirazione","must_include":["glicolisi","Krebs","ATP"]}
+{"question":"Cosa succede nella fase luminosa della fotosintesi?","subject":"biologia","expect_doc":"bio.fotosintesi","must_include":["clorofilla","tilacoidi","ossigeno"]}
+{"question":"Quante cellule produce la meiosi e quante la mitosi?","subject":"biologia","expect_doc":"bio.divisione","must_include":["quattro","aploidi","due"]}
+{"question":"Che cos'è il crossing-over e in quale processo avviene?","subject":"biologia","expect_doc":"bio.divisione","must_include":["profase"]}
+{"question":"Come si passa dal DNA alla proteina?","subject":"biologia","expect_doc":"bio.dna","must_include":["trascrizione","traduzione","codone"]}
+{"question":"Qual è il rapporto fenotipico della seconda legge di Mendel?","subject":"biologia","expect_doc":"bio.mendel","must_include":["3:1","segregazione"]}
+{"question":"Come fa l'acqua ad attraversare la membrana cellulare?","subject":"biologia","expect_doc":"bio.membrana","must_include":["osmosi","acquaporine"]}
+{"question":"Che ruolo hanno gli stomi nella foglia?","subject":"biologia","expect_doc":"bio.botanica","must_include":["stomi","vapore acqueo","gas"]}
+{"question":"Quali ormoni vegetali controllano la maturazione dei frutti?","subject":"biologia","expect_doc":"bio.ormoni","must_include":["etilene"]}
+{"question":"Quanta energia passa da un livello all'altro della catena alimentare?","subject":"biologia","expect_doc":"bio.ecosistemi","must_include":["10"]}
+{"question":"Chi ha introdotto la nomenclatura binomia?","subject":"biologia","expect_doc":"bio.classificazione","must_include":["Linneo"]}
+{"question":"Quali sono i primi dodici articoli della Costituzione?","subject":"cultura","expect_doc":"cul.costituzione","must_include":["principi fondamentali","1948"]}
+{"question":"Quanti deputati e senatori ci sono e quanto dura la legislatura?","subject":"cultura","expect_doc":"cul.ordinamento","must_include":["400","200","cinque anni"]}
+{"question":"Chi guida Dante nel Paradiso?","subject":"cultura","expect_doc":"cul.dante","must_include":["Beatrice"]}
+{"question":"In che anno è ambientato il romanzo di Manzoni?","subject":"cultura","expect_doc":"cul.manzoni","must_include":["1628"]}
+{"question":"Quale opera contiene L'infinito?","subject":"cultura","expect_doc":"cul.leopardi","must_include":["Canti"]}
+{"question":"Chi ha guidato la spedizione dei Mille e quando nasce il Regno d'Italia?","subject":"cultura","expect_doc":"cul.risorgimento","must_include":["Garibaldi","1861"]}
+{"question":"Qual è il fiume più lungo d'Italia e quante regioni ci sono?","subject":"cultura","expect_doc":"cul.geografia","must_include":["Po","20"]}
+{"question":"Quanti Stati fanno parte dell'Unione Europea oggi?","subject":"cultura","expect_doc":"cul.ue","must_include":["27"]}
+{"question":"Chi sono i protagonisti dei Promessi Sposi?","subject":"cultura","expect_doc":"cul.manzoni","must_include":["Renzo","Lucia"]}
+{"question":"Chi ha vinto i campionati mondiali di calcio del 2022?","should_abstain":true}
+{"question":"Come si calcola l'integrale di una funzione razionale?","should_abstain":true}
+{"question":"Quanto costa un trattore nuovo di 120 cavalli?","should_abstain":true}
+{"question":"Qual è la ricetta originale della carbonara?","should_abstain":true}

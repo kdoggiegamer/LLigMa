@@ -1,0 +1,50 @@
+# LLigMa on an AMD Radeon GPU through WSL2 (ROCm).
+#
+# IMPORTANT: this file must be used with a Docker Engine running INSIDE the WSL2
+# distro, not with Docker Desktop. Docker Desktop's GPU passthrough is NVIDIA
+# only, and it does not expose the WSL DXCore bridge this setup needs.
+#
+# Run from the WSL distro, from this directory:
+#   docker compose build
+#   docker compose run --rm lligma
+
+services:
+  lligma:
+    build:
+      # Context is the repository root so the Dockerfile can copy files from it.
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        ROCM_PYTORCH_TAG: ${ROCM_PYTORCH_TAG:-latest-rocm7.2.1-py3.12-pytorch2.9.0}
+    image: lligma-rocm:local
+    working_dir: /workspace
+    ipc: host
+    stdin_open: true
+    tty: true
+    devices:
+      # WSL2 has no /dev/kfd: the GPU is reached through the DXCore bridge.
+      - /dev/dxg:/dev/dxg
+      # /dev/dri exists in most WSL2 distros; remove this line if it does not,
+      # because Docker refuses to start when a listed device is missing.
+      - /dev/dri:/dev/dri
+    environment:
+      # Tells ROCm to discover the GPU through the DXCore bridge.
+      HSA_ENABLE_DXG_DETECTION: "1"
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib
+      # Keeps Python output unbuffered so training logs appear live.
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      # The repository, mounted so training reads the code from here.
+      - ..:/workspace
+      # WSL host libraries (including the DirectX/ROCm interop pieces).
+      - /usr/lib/wsl/lib:/usr/lib/wsl/lib:ro
+      # The ROCDXG shim. This bind mount is COMMENTED OUT on purpose: if the
+      # host path does not exist, Docker creates an empty directory there and
+      # the container ends up with a broken library. Verify the path first
+      #   ls -l /opt/rocm/lib/librocdxg.so.1
+      # and only then uncomment the line below.
+      # - /opt/rocm/lib/librocdxg.so.1:/usr/lib/x86_64-linux-gnu/librocdxg.so:ro
+    group_add:
+      # Needed to open the render device. Harmless if the group is absent.
+      - video
+      - render

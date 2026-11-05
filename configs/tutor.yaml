@@ -1,0 +1,107 @@
+# LLigMa Tutor — configurazione unica del servizio.
+#
+# I segreti non stanno qui: ${VAR} e ${VAR:default} vengono espansi da variabili
+# d'ambiente al caricamento. Percorsi relativi = rispetto alla radice del progetto.
+
+index:
+  # Prodotto da scripts/build_tutor_index.py
+  path: index/tutor-index.json
+  # ~110 parole per passaggio: abbastanza per contenere un concetto completo,
+  # abbastanza poco perche' rientri nel contesto di un modello da 0,3-0,6B.
+  chunk_words: 110
+  overlap_words: 28
+
+retrieval:
+  top_k: 5
+  # Sotto questa soglia BM25 il tutor dichiara di non sapere invece di generare.
+  # Va ricalibrata se il corpus cresce di un ordine di grandezza: usa
+  # scripts/evaluate_tutor.py --scores per vedere la distribuzione reale.
+  min_score: 2.5
+  title_boost: 1.5
+  # Una sola parola in comune non e' una prova: e' quasi sempre una coincidenza.
+  min_terms: 2
+  # Espansione della sola query di retrieval. Disattivata per default: il
+  # comportamento e i dati di produzione restano quelli di prima. Le chiavi
+  # possono essere parole o frasi; i valori una parola o una lista di parole.
+  expansion:
+    enabled: false
+    synonyms:
+      stallatico: letame
+      pollina: letame
+      monosuccessione: monocoltura
+      avvicendamento: rotazione
+      ammendante: humus
+      fertilizzazione: concimazione
+      sfoltimento: potatura
+      "involucro cellulare": membrana
+      "pigmento verde": clorofilla
+      "nome scientifico": nomenclatura
+      vate: dante
+      "carta costituzionale": costituzione
+      "corso d'acqua": fiume
+      idioma: lingua
+      # Nuove famiglie lessicali misurate su eval-paraphrase.jsonl.
+      # Le regole con più parole sono applicate prima di quelle più corte.
+      granulometria: tessitura
+      dissodamento: aratura
+      gocciolamento: goccia a goccia
+      fitopatia: avversita
+      stabulazione: stalla
+      granturco: mais coltura
+      cerealicoltura: cereali
+      foraggicoltura: foraggi
+      sovrainnesto: innesto
+      scarificazione: lavorazione
+      "lotta biologica": difesa biologica
+      pedologia: suolo
+      subirrigazione: irrigazione
+      bovinicoltura: bovina
+      citosol: citoplasma cellulare
+      "materiale ereditario": dna
+      citodieresi: divisione
+      "fosforilazione ossidativa": respirazione
+      fitoregolatore: fitormone
+      detritivoro: decompositori
+      cariocinesi: mitosi
+      cee: comunita economica europea
+      pac: politica agricola comune
+      lirica: poesia
+      idrografia: fiumi
+
+generation:
+  # auto | extractive | openai | local
+  # auto = studente locale -> docente via API -> estrattivo.
+  backend: auto
+  max_context_chars: 3600
+  max_sentences: 5
+  min_sentence_overlap: 2
+  history_turns: 3
+
+openai:
+  # Modello "docente": serve alla distillazione e come riferimento. Non e' il
+  # modello che gira a scuola.
+  base_url: ${OPENAI_BASE_URL:https://freebuff.com/api/v1/paid}
+  model: ${TUTOR_TEACHER_MODEL:gpt-4o-mini}
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.2
+  max_tokens: 450
+  timeout: 60
+
+local:
+  # Modello "studente": prodotto da scripts/finetune_tutor.py
+  model_path: outputs/tutor-ft
+  load_in_4bit: true
+  max_new_tokens: 320
+  device: auto
+  dtype: bfloat16
+  temperature: 0.2
+
+server:
+  # Solo loopback di default: e' un servizio scolastico, non va esposto a internet
+  # senza un proxy che gestisca autenticazione e quota.
+  host: 127.0.0.1
+  port: 8080
+  # Vuoto = con bind loopback accetta solo 127.0.0.1, localhost e ::1.
+  # Se metti un reverse proxy davanti al tutor, aggiungi qui il suo hostname.
+  allowed_hosts: []
+  web_dir: web/tutor

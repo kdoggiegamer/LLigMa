@@ -1,0 +1,13 @@
+{
+  "id": "angelodellamorte/lligma-norm-ab",
+  "title": "lligma norm ab",
+  "code_file": "lligma-norm-ab.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["angelodellamorte/lligma-code"],
+  "competition_sources": [],
+  "kernel_sources": ["angelodellamorte/lligma-prep"]
+}

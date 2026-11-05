@@ -1,0 +1,15 @@
+{
+  "id": "angelodellamorte/lligma-rms-bench",
+  "title": "lligma rms bench",
+  "code_file": "lligma-rms-bench.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "angelodellamorte/lligma-code"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}
