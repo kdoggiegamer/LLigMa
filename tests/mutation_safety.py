@@ -246,24 +246,45 @@ def run_recovery_child() -> tuple[int, str]:
 def scenario_out_of_tree_unavailable(before: tuple[str, str]) -> None:
     env = os.environ.copy()
     env["LLIGMA_MUTATION_DISABLE_OUT_OF_TREE"] = "1"
-    completed = subprocess.run(
+    # Popen e non subprocess.run: se la guardia viene rotta (e' il caso del
+    # controllo negativo) il comando non esce con 2 e puo' durare quanto la
+    # campagna intera. Al timeout l'albero va terminato davvero, altrimenti
+    # restano pytest figli che scrivono nel progetto, e il FAIL deve riportare
+    # lo stesso messaggio del caso positivo invece di un traceback di
+    # orchestrazione: il timeout e' la prova che la guardia non e' scattata.
+    timeout = 240
+    process = subprocess.Popen(
         [sys.executable, str(MUTATION)],
         cwd=str(ROOT),
         env=env,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
         encoding="utf-8",
         errors="replace",
-        # Se il guard viene rotto, il comando parte e puo' durare quanto la
-        # suite completa: il timeout deve lasciare arrivare l'exit reale, non
-        # produrre un FAIL generico da orchestrazione.
-        timeout=240,
+        start_new_session=(os.name != "nt"),
     )
-    output = (completed.stdout or "") + (completed.stderr or "")
+    timed_out = False
+    try:
+        output, _ = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        demo.kill_tree(process.pid)
+        try:
+            output, _ = process.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            output, _ = process.communicate()
+    output = output or ""
     print(output[-4000:])
-    if completed.returncode != 2:
+    if timed_out:
         raise AssertionError(
-            f"out-of-tree assente: atteso exit 2, ottenuto {completed.returncode}"
+            "out-of-tree assente: atteso exit 2, ottenuto un comando ancora "
+            f"in esecuzione dopo {timeout}s (guardia inerte)"
+        )
+    if process.returncode != 2:
+        raise AssertionError(
+            f"out-of-tree assente: atteso exit 2, ottenuto {process.returncode}"
         )
     if "out-of-tree" not in output and "impossibile creare la transazione" not in output:
         raise AssertionError("out-of-tree assente: errore atteso non trovato")

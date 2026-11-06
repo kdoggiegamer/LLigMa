@@ -21,13 +21,44 @@ Measured on the shipped corpus with the extractive reference backend: recall@3
 100% (30/30), keyword coverage 1.00 (30/30), abstention 4/4 on out-of-scope
 questions, about 0.5 ms mean latency on CPU. Both the no-key `/api/ask` and
 `/api/stream` paths are covered by `tests/test_tutor_server_e2e.py`. The
-paraphrase set `data/tutor/eval-paraphrase.jsonl` measures the optional synonym
-expansion (0/39 recall without it, 39/39 with it); it is disabled by default.
+paraphrase set `data/tutor/eval-paraphrase.jsonl` measures the synonym expansion
+(0/39 recall without it, 39/39 with it); the shipped configuration enables it,
+because with it off a reworded in-scope question is refused instead of answered.
 `python scripts/evaluate_tutor.py --compare` prints the before/after report for
 both evaluation sets in one run.
 The web client's history, interrupted-stream and error paths are covered by
 `tests/test_tutor_web_client.py`. The service depends only on `PyYAML`; the
 optional student model needs `torch`, `transformers`, `peft` and `bitsandbytes`.
+
+## Alessandria (local)
+
+Alessandria is the local inference playground for the from-scratch checkpoint.
+It lives in `web/model/` and uses a standard-library HTTP/SSE server:
+
+```bash
+.venv/Scripts/python.exe -m lligma.model.server \
+  --model outputs/lligma-small-smoke --port 8081
+```
+
+Open `http://127.0.0.1:8081/`. The page has two modes:
+
+- **Tutor + LLigMa** asks the Tutor to retrieve passages, shows the extractive
+  answer as the reliable baseline, and sends the numbered context to the
+  checkpoint as a rewriter. It calls `POST /api/tutor/stream` with
+  `{"question": "..."}`. The SSE metadata includes `sources`, `baseline`,
+  `retrieval_ms`, `baseline_ms`, `retrieved`, `context_chars` and `abstained`.
+  When the Tutor abstains, the checkpoint is not called at all. The UI shows the
+  baseline, the cited sources, and both the Tutor time and the generation
+  metrics; TTFT and total time include retrieval and baseline construction.
+- **Solo completamento** keeps the raw `POST /api/stream` path.
+
+The page shows the streamed completion, total response time, time to first
+token, generated tokens and tokens/s; the measurements come from the server.
+The loader detects the checkpoint's missing `lm_head.weight` and enables tied
+embeddings, so the output head is not initialized randomly. The included
+checkpoint is a smoke model, not an instruction-tuned chat model, so its
+completions are expected to be incoherent; the extractive baseline is the
+verified answer.
 
 ## Model size
 

@@ -146,6 +146,7 @@ def main() -> int:
     print(f"Vocabolario : {len(index.idf):,} termini")
     print(f"Lunghezza media: {index.average_length:.1f} termini per passaggio")
     print(f"Materie     : {', '.join(index.metadata['subjects'])}")
+    print(f"Costruito   : {index.metadata['built_at']}")
     print(f"Salvato in  : {output} ({output.stat().st_size / 1024:.0f} KB)")
 
     for question in args.probe:

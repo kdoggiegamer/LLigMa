@@ -205,8 +205,12 @@ class TutorService:
         # una domanda fuori ambito, che non appartiene a nessuna delle tre
         # materie, non si aggrappa a una parola qualsiasi pur di rispondere.
         if guessed:
+            # La query di questo tentativo e' quella espansa, come nei due
+            # precedenti: i sinonimi valgono per tutto il retrieval, non solo
+            # per la prima meta'. Con la domanda originale, una regola che
+            # sostituisce un termine assente dal corpus non puo' contribuire.
             relaxed = self.index.search(
-                question,
+                search_question,
                 top_k=config.top_k,
                 subject=guessed,
                 min_score=min_score * 1.5,

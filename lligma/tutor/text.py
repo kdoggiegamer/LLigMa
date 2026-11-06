@@ -5,10 +5,12 @@ costruire un indice BM25. Qui bastano poche regole, a patto che siano le regole
 giuste per l'italiano.
 
 La scelta discutibile e' lo stemming: invece di uno stemmer completo (Snowball)
-si toglie solo la vocale finale delle parole lunghe. In italiano la flessione e'
-quasi tutta vocalica (suolo/suoli, foglia/foglie, mela/mele) e questo trucco da
-tre righe allinea singolare e plurale nella grande maggioranza dei casi, senza
-accorciare parole che non vanno accorciate.
+si tolgono un suffisso e la vocale finale. In italiano la flessione e' quasi
+tutta vocalica (suolo/suoli, foglia/foglie, mela/mele) e bastano poche regole
+per allineare singolare, plurale e famiglia di parole. I suffissi sono divisi in
+due classi con soglie diverse: i derivativi pretendono una radice di almeno tre
+lettere, i flessionali anche di due, cosi' `arare` e `aratura` cadono sulla
+stessa chiave senza che `unica` diventi `un`.
 """
 
 from __future__ import annotations
@@ -46,36 +48,65 @@ _SHORT_KEEP = frozenset({"ph", "dna", "rna", "atp", "adp", "kg", "cm", "mm", "ue
 _VOWELS = frozenset("aeiou")
 
 
-# Suffissi derivativi dell'italiano. Servono per far coincidere parole della
-# stessa famiglia che uno studente usa come sinonimi: pota/potare/potatura,
-# concima/concimare/concimazione, fertile/fertilita'. Senza questo passo il
-# retriever perde domande del tutto legittime solo perche' il testo usa il nome
-# e lo studente il verbo. Sono ordinati dal piu' lungo: "azione" prima di "zione".
-# Nota su cosa NON c'e' in questa lista: "zione"/"zioni" e "ale"/"ali" sono
-# stati tolti dopo aver visto "funzione" diventare "fun" e "integrale" diventare
-# "integr": accorciavano tanto da far combaciare parole che non c'entrano nulla.
-# Un suffisso va tolto solo se il resto resta riconoscibile.
-_SUFFIXES = (
-    "azione", "azioni", "amento", "amenti", "imento", "imenti", "atura", "ature",
-    "mente", "menti", "aggio", "aggi", "enza", "enze",
-    "anza", "anze", "ismo", "ismi", "tura", "ture", "iche", "are", "ere",
-    "ire", "ato", "ata", "ati", "ate", "ito", "ita", "iti", "ite",
-    "ico", "ica", "ici", "ivo", "iva", "ivi", "ive", "oso", "osa",
+# Suffissi dell'italiano, ciascuno con la lunghezza minima che deve restare
+# alla radice. Servono per far coincidere parole della stessa famiglia che uno
+# studente usa come sinonimi: pota/potare/potatura, concima/concimare/
+# concimazione, fertile/fertilita'.
+#
+# Sono due classi, e la distinzione non e' un dettaglio:
+#
+# * **derivativi** (`azione`, `atura`, `mente`, `ico`, ...) trasformano una
+#   parola in un'altra. Si tolgono solo se resta una radice di almeno tre
+#   lettere: con due, `unica` diventerebbe `un`, che e' anche `unire`.
+# * **flessionali** (`are`, `ere`, `ire`, `ano`, `ono`, `ando`, ...) sono la
+#   stessa parola in un'altra forma, quindi la radice puo' essere di due
+#   lettere. E' cio' che tiene insieme `arare` e `aratura`: senza, il verbo
+#   restava `arar` mentre il nome diventava `ara`, e il retriever perdeva la
+#   domanda piu' naturale che uno studente possa fare su una lavorazione.
+#
+# Ordine: dal suffisso piu' lungo al piu' corto, cosi' `atura` vince su `tura`
+# e `avano` su `ano`.
+# Nota su cosa NON c'e' in questa lista: `zione`/`zioni` e `ale`/`ali` sono
+# stati tolti dopo aver visto `funzione` diventare `fun` e `integrale` diventare
+# `integr`: accorciavano tanto da far combaciare parole che non c'entrano nulla.
+_SUFFIXES: tuple[tuple[str, int], ...] = (
+    # 6 lettere
+    ("azione", 3), ("azioni", 3), ("amento", 3), ("amenti", 3),
+    ("imento", 3), ("imenti", 3),
+    # 5 lettere: i deverbali `atura`/`ature` e le forme verbali `avano` ecc.
+    # stanno qui, prima dei suffissi piu' corti che li contengono (`tura`, `ano`).
+    ("atura", 2), ("ature", 2),
+    ("mente", 3), ("menti", 3), ("aggio", 3),
+    ("avano", 3), ("evano", 3), ("ivano", 3),
+    # 4 lettere
+    ("aggi", 3), ("enza", 3), ("enze", 3), ("anza", 3), ("anze", 3),
+    ("ismo", 3), ("ismi", 3), ("tura", 3), ("ture", 3), ("iche", 3),
+    ("ando", 3), ("endo", 3), ("iamo", 3), ("iate", 3),
+    # 3 lettere: derivativi, infiniti (radice di due lettere ammessa) e
+    # flessionali del verbo.
+    ("ato", 3), ("ata", 3), ("ati", 3), ("ate", 3),
+    ("ito", 3), ("ita", 3), ("iti", 3), ("ite", 3),
+    ("ico", 3), ("ica", 3), ("ici", 3),
+    ("ivo", 3), ("iva", 3), ("ivi", 3), ("ive", 3),
+    ("oso", 3), ("osa", 3), ("ana", 3), ("ane", 3), ("ani", 3),
+    ("are", 2), ("ere", 2), ("ire", 2),
+    ("ano", 3), ("ono", 3),
 )
 
 
 def stem(word: str) -> str:
-    """Riduzione minima: via il suffisso derivativo e la vocale finale.
+    """Riduzione minima: via il suffisso (derivativo o flessionale) e la vocale.
 
     Non e' uno stemmer: e' una normalizzazione. Snowball sarebbe piu' preciso e
     richiederebbe una tabella di regole ordinate e un caso di studio per ogni
     eccezione; qui basta che "potatura", "potare" e "pota" cadano sulla stessa
-    chiave, e che "vite" non diventi "vit" solo quando non serve.
+    chiave, che "arare" e "aratura" facciano lo stesso, e che "vite" non
+    diventi "vit" solo quando non serve.
     """
     if len(word) <= 3:
         return word
-    for suffix in _SUFFIXES:
-        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+    for suffix, min_root in _SUFFIXES:
+        if word.endswith(suffix) and len(word) - len(suffix) >= min_root:
             word = word[: -len(suffix)]
             break
     if len(word) >= 4 and word[-1] in _VOWELS:

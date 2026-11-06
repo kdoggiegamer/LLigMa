@@ -20,11 +20,15 @@ retrieval:
   title_boost: 1.5
   # Una sola parola in comune non e' una prova: e' quasi sempre una coincidenza.
   min_terms: 2
-  # Espansione della sola query di retrieval. Disattivata per default: il
-  # comportamento e i dati di produzione restano quelli di prima. Le chiavi
-  # possono essere parole o frasi; i valori una parola o una lista di parole.
+  # Espansione della sola query di retrieval, attiva per default.
+  # Misurata con scripts/evaluate_tutor.py --compare: sul set originale il
+  # recall@3 resta 30/30 e l'astensione 4/4; sul set di parafrasi passa da
+  # 0/39 a 39/39, al costo di circa 0,1 ms sul p95. Spenta, una domanda in
+  # ambito riscritta con un sinonimo viene rifiutata: non e' un default
+  # accettabile per un servizio scolastico. Le chiavi possono essere parole o
+  # frasi; i valori una parola o una lista di parole.
   expansion:
-    enabled: false
+    enabled: true
     synonyms:
       stallatico: letame
       pollina: letame

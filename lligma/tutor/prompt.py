@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from .index import Hit
 from .schema import Source
-from .text import normalize
+from .text import normalize, stem
 
 SUBJECT_LABELS = {
     "agronomia": "Agronomia",
@@ -95,6 +95,18 @@ def subject_label(key: str | None) -> str:
     return SUBJECT_LABELS.get((key or "").strip().lower(), (key or "Generale").title())
 
 
+# Le parole chiave si confrontano sulle radici, non sulla forma scritta: uno
+# studente scrive "i bovini", la dispensa "la bovina", e il confronto letterale
+# non li vede mai uguali. Con le radici la stessa parola chiave copre singolare,
+# plurale e derivati, e la materia indovinata sblocca anche il tentativo
+# ristretto di ``TutorService.retrieve`` (altrimenti una domanda riconoscibile
+# finisce in astensione solo perche' il lessico non combacia alla lettera).
+_SUBJECT_STEMS = {
+    subject: frozenset(stem(keyword) for keyword in keywords)
+    for subject, keywords in SUBJECT_KEYWORDS.items()
+}
+
+
 def guess_subject(question: str, weights: dict[str, float] | None = None) -> str | None:
     """Materia probabile della domanda, dal lessico della domanda stessa.
 
@@ -107,10 +119,10 @@ def guess_subject(question: str, weights: dict[str, float] | None = None) -> str
     # Normalizzare gli accenti e' essenziale: "biodiversità" e "biodiversita"
     # devono produrre gli stessi token, altrimenti le parole chiave scritte
     # senza accento non trovano mai la domanda.
-    tokens = set(normalize(question).split())
+    tokens = {stem(word) for word in normalize(question).split()}
     scores = {
-        subject: len(tokens & set(keywords))
-        for subject, keywords in SUBJECT_KEYWORDS.items()
+        subject: len(tokens & keywords)
+        for subject, keywords in _SUBJECT_STEMS.items()
     }
     best = max(scores, key=scores.get)
     if scores[best] == 0:

@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--expand",
         action="store_true",
-        help="attiva il dizionario di sinonimi per misurare il prima/dopo",
+        help="forza il dizionario attivo (la configurazione distribuita lo attiva gia')",
     )
     parser.add_argument(
         "--compare",
@@ -94,11 +94,21 @@ def resolved(path: str, root: Path) -> Path:
     return candidate if candidate.is_absolute() else root / candidate
 
 
-def build_service(config_path: str, backend: str | None, expanded: bool) -> TutorService:
+def build_service(
+    config_path: str, backend: str | None, expanded: bool | None = None
+) -> TutorService:
+    """Costruisce il servizio. ``expanded=None`` rispetta ``configs/tutor.yaml``.
+
+    Una misura singola deve descrivere la configurazione distribuita: forzare
+    l'espansione a spento qui renderebbe il report di default piu' vecchio del
+    file che sta descrivendo. Solo ``--compare`` forza esplicitamente entrambe
+    le configurazioni, perche' il suo scopo e' il prima/dopo.
+    """
     config = TutorConfig.from_file(config_path)
     if backend:
         config.generation.backend = backend
-    config.retrieval.expansion.enabled = expanded
+    if expanded is not None:
+        config.retrieval.expansion.enabled = expanded
     return TutorService(config)
 
 
@@ -405,7 +415,7 @@ def main() -> int:
             )
         return 0 if ok else 1
 
-    service = build_service(args.config, args.backend, expanded=args.expand)
+    service = build_service(args.config, args.backend, expanded=True if args.expand else None)
     result = measure(service, items, args.verbose)
     print_single(service, items, args, result)
 

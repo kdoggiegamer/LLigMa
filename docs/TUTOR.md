@@ -94,12 +94,30 @@ dipendenze. "Piccolo e veloce" vale anche per il retriever. Se un giorno il
 corpus supera ~50.000 passaggi, il posto dove aggiungere un ibrido denso è
 `BM25Index.search`.
 
-**Stemming italiano minimo ma mirato.** Non è Snowball: toglie suffissi
-derivativi (`-azione`, `-atura`, `-are`) e la vocale finale, così `pota`,
-`potare` e `potatura` cadono sulla stessa chiave — uno studente scrive il verbo,
-la dispensa usa il nome. I suffissi che accorciavano troppo (`-zione`, `-ale`)
-sono stati tolti: facevano combaciare `funzione` con `fun` e `integrale` con
-`integr`, cioè parole non correlate.
+**Stemming italiano minimo ma mirato.** Non è Snowball: toglie un suffisso e la
+vocale finale, così `pota`, `potare` e `potatura` cadono sulla stessa chiave —
+uno studente scrive il verbo, la dispensa usa il nome. I suffissi sono divisi in
+due classi. Quelli **derivativi** (`-azione`, `-atura`, `-mente`) si tolgono solo
+se resta una radice di almeno tre lettere; quelli **flessionali** (`-are`,
+`-ano`, `-ono`, `-ando`, `-avano`) ammettono anche due, perché `arare` e
+`aratura` devono cercare la stessa scheda. La distinzione non è teorica: prima
+`arare` diventava `arar` e `aratura` diventava `ara`, e la domanda «a cosa serve
+arare il campo prima della semina?» recuperava la scheda sull'irrigazione
+invece di quella sulle lavorazioni. I suffissi che accorciavano troppo
+(`-zione`, `-ale`) sono stati tolti: facevano combaciare `funzione` con `fun` e
+`integrale` con `integr`, cioè parole non correlate.
+
+I termini ridotti sono salvati **dentro** l'indice, quindi un cambio di stemming
+richiede la ricostruzione. `index/tutor-index.json` è ora in formato **v2**: un
+indice v1 viene rifiutato con un messaggio esplicito invece di essere usato con
+chiavi diverse dalle nuove. La costruzione è anche riproducibile: con
+`SOURCE_DATE_EPOCH` fissato due build producono file byte per byte identici;
+senza quella variabile cambia solo `built_at`, l'unico campo che dipende
+dall'orologio. Misurato dopo il cambio, sui due set di valutazione
+spediti: `eval.jsonl` 30/30 recall@3, 30/30 top@1, copertura 1,00, astensione
+4/4; `eval-paraphrase.jsonl` 0/39 senza espansione e 39/39 con espansione. Sono
+gli stessi numeri di prima. Il vocabolario dell'indice scende da 1.720 a 1.656
+termini, perché forme della stessa famiglia ora si fondono.
 
 **Distillazione docente → studente.** `scripts/distill_tutor.py` usa il modello
 grande via API per generare coppie domanda-risposta **ancorate a un passaggio
@@ -133,8 +151,12 @@ qualsiasi. In una scuola un "non lo so" è un risultato, non un errore.
 
 **Espansione controllata della query.** Un dizionario di sinonimi settoriali
 (`stallatico` → `letame`, `avvicendamento` → `rotazione`, `corso d'acqua` →
-`fiume`) vive in `configs/tutor.yaml` ed è **disattivato per default**. Quando
-è attivo, la sostituzione avviene solo sulla stringa di retrieval e sulla
+`fiume`) vive in `configs/tutor.yaml` ed è **attivo per default**. Misurato con
+`scripts/evaluate_tutor.py --compare`: sul set originale il recall@3 resta 30/30
+con astensione 4/4, sul set di parafrasi si passa da 0/39 a 39/39 e il p95 da
+0,9 a 1,0 ms. Da spento, una domanda in ambito riscritta con un sinonimo veniva
+rifiutata (37 astensioni su 39): per un servizio scolastico non è un default
+accettabile. La sostituzione avviene solo sulla stringa di retrieval e sulla
 selezione delle frasi del backend estrattivo: la domanda mostrata, la chiave
 della cache e il limite di 800 caratteri restano quelli originali. Il dizionario
 non introduce dipendenze e non modifica l'indice; le regole più lunghe hanno la
@@ -286,9 +308,10 @@ sostituire il set originale.
 python scripts/evaluate_tutor.py --scores
 python scripts/evaluate_tutor.py --scores --json outputs/tutor-eval.json
 
-# Prima/dopo dell'espansione, sullo stesso corpus
+# Il set di parafrasi con la configurazione distribuita (espansione già accesa)
 python scripts/evaluate_tutor.py --eval data/tutor/eval-paraphrase.jsonl
-python scripts/evaluate_tutor.py --eval data/tutor/eval-paraphrase.jsonl --expand
+
+# Il prima/dopo: l'espansione spenta si vede solo forzandola, e --compare lo fa
 
 # Un'unica esecuzione: entrambi i set, espansione spenta e accesa
 python scripts/evaluate_tutor.py --compare
@@ -298,17 +321,18 @@ python scripts/evaluate_tutor.py --compare
 delle quattro combinazioni. Il fallimento del set parafrasi a espansione spenta
 è atteso e non fa uscire il comando in errore; il comando fallisce se una
 configurazione che deve passare (set originale in entrambe le configurazioni,
-parafrasi espanse) non passa. La modalità senza `--compare` resta invariata e
-può essere usata per una singola misura.
+parafrasi espanse) non passa. Una misura senza `--compare` usa invece la
+configurazione distribuita, quindi con l'espansione accesa.
 
-Misure reali con backend estrattivo:
+Misure reali con backend estrattivo. La configurazione distribuita è quella con
+l'espansione **accesa**; le righe «spenta» sono il confronto, non il default:
 
 | Set | Espansione | recall@3 | top@1 | copertura | astensione | p95 |
 |---|---|---|---|---|---|---|
-| `eval.jsonl` | spenta (default) | **30/30** | **30/30** | **1,00** | **4/4** | 1,0–1,7 ms |
-| `eval.jsonl` | accesa | **30/30** | **30/30** | **1,00** | **4/4** | 0,9–1,6 ms |
+| `eval.jsonl` | spenta | **30/30** | **30/30** | **1,00** | **4/4** | 1,0–1,7 ms |
+| `eval.jsonl` | accesa (default) | **30/30** | **30/30** | **1,00** | **4/4** | 0,9–1,6 ms |
 | `eval-paraphrase.jsonl` | spenta | **0/39** | **0/39** | 0,03 | n/d | 0,0–0,2 ms |
-| `eval-paraphrase.jsonl` | accesa | **39/39** | **39/39** | **1,00** | n/d | 1,0–1,8 ms |
+| `eval-paraphrase.jsonl` | accesa (default) | **39/39** | **39/39** | **1,00** | n/d | 1,0–1,8 ms |
 
 Senza espansione nessuna delle 39 parafrasi raggiunge la scheda attesa: 37 si
 astengono e 2 rispondono su una scheda sbagliata. La copertura residua di 0,03
@@ -318,10 +342,11 @@ scheda attesa in prima posizione e come prima fonte, e la copertura delle parole
 chiave attese sale a 1,00. Le 14 domande precedenti restano 0/14 senza espansione
 e 14/14 con espansione; le 25 nuove passano da 0/25 a 25/25, sempre con la scheda
 attesa in prima posizione. La latenza resta nello stesso ordine di grandezza:
-p95 1,0–1,8 ms con l'espansione, 0,9–1,7 ms sul set originale. Il default spento
-lascia invariati i dati e il comportamento di produzione; nessuna regola del
-dizionario è necessaria per far passare `eval.jsonl`, che resta 30/30 anche a
-dizionario spento.
+p95 1,0–1,8 ms con l'espansione, 0,9–1,7 ms sul set originale. Il default
+distribuito è l'espansione accesa: sul set originale non sposta nulla (30/30 e
+astensione 4/4 anche a dizionario spento, quindi nessuna regola serve a far
+passare `eval.jsonl`), mentre sul set di parafrasi è la differenza fra 0/39 e
+39/39. Il costo misurato è nell'ordine del decimo di millisecondo sul p95.
 
 La modalità senza chiave è verificata anche end-to-end: `tests/test_tutor_server_e2e.py`
 avvia il server reale con `--backend extractive`, rimuove `OPENAI_API_KEY`,
@@ -362,7 +387,7 @@ originale non può dimostrare la byte-identità. Il test dedicato
 mutazione applicata, verifica hash, transazione e watchdog, poi lascia una
 transazione orfana e esegue il comando completo: deve comparire `RECOVERY:` e
 `VERDICT: PASS`. La verifica permanente e più ampia è
-`python tests/mutation_safety.py`: non è interattiva, non fa parte dei 79 test
+`python tests/mutation_safety.py`: non è interattiva, non fa parte dei 93 test
 pytest e prova in sequenza il watchdog out-of-tree contro il kill dell'albero,
 la transazione orfana con backup, l'indisponibilità simulata del meccanismo
 out-of-tree, una transazione stale con marker clean, il riuso del PID del padre
@@ -376,13 +401,36 @@ deve uscire 2 prima di applicare la mutazione. Eseguita due volte di fila,
 la verifica ha stampato `MUTATION_SAFETY: PASS` entrambe le volte, con la
 seconda partenza da hash e transazioni già puliti; al termine i tre hash sono
 rimasti quelli originali e non sono restati transazioni, lock, watchdog o log
-di test. Questi script sono standalone e non fanno parte dei 79 test pytest.
+di test. `tests/mutation_safety.py` e gli altri `tests/mutation_*.py` restano
+script standalone; il controllo negativo è il test pytest che li orchestra.
 
-### Controllo negativo dell'harness
+### Controllo negativo automatico
 
-Per dimostrare che il safety non è un test compiacente, eseguire il controllo
-negativo su una copia di lavoro di `tests/mutation_transaction.py`, salvando
-prima i suoi byte e il suo hash e ripristinandoli in un `finally`:
+Il controllo è automatizzato in `tests/test_mutation_negative_control.py`; si
+esegue da solo o con pytest:
+
+```bash
+python tests/test_mutation_negative_control.py
+python -m pytest tests/test_mutation_negative_control.py -q
+```
+
+Il test salva in memoria i sette file congelati, applica una regressione per
+volta a `tests/mutation_transaction.py`, esegue `tests/mutation_safety.py` e
+pretende exit 1 con il FAIL specifico. Il ripristino avviene in `finally` e
+viene verificato contro gli hash; un canary separato dimostra che un ripristino
+disattivato viene davvero rilevato. Non lascia transazioni, lock o log: al
+termine gli hash sono quelli iniziali.
+
+Nel caso `TREE_KILL` il FAIL deve nominare il watchdog ucciso da `taskkill /T`,
+non un timeout o un traceback. Nel caso out-of-tree il comando non protetto può
+uscire `0` oppure `1`, perché la suite E2E può fallire sotto carico prima della
+mutazione, oppure può restare in esecuzione fino al timeout di 240 s del
+safety. In ogni caso il safety deve uscire `1` e riportare `atteso exit 2,
+ottenuto ...`. Accettare questi esiti non indebolisce il guard: il contratto è
+che il comando venga fermato prima della mutazione con exit 2; un exit 0/1, o
+un comando ancora vivo, dimostra che non è stato fermato.
+
+La procedura manuale seguente resta come diagnostica per capire un FAIL:
 
 1. **Regressione TREE_KILL.** Sostituire il ramo Windows che chiama
    `_start_wmi_watchdog(transaction, root)` con un normale `subprocess.Popen`
@@ -399,7 +447,9 @@ prima i suoi byte e il suo hash e ripristinandoli in un `finally`:
 2. **Guard out-of-tree ignorato.** Cambiare temporaneamente il confronto
    `LLIGMA_MUTATION_DISABLE_OUT_OF_TREE == "1"` in `== "0"`, così la variabile
    non blocca più la creazione della transazione. Eseguire il safety: deve
-   stampare `OUT_OF_TREE_UNAVAILABLE: FAIL` con “atteso exit 2, ottenuto 0” e
+   stampare `OUT_OF_TREE_UNAVAILABLE: FAIL` con “atteso exit 2, ottenuto ...”
+   (`0` o `1` a seconda che la suite non protetta passi o fallisca, oppure il
+   timeout dopo 240 s se il comando resta in esecuzione) e
    `MUTATION_SAFETY: FAIL`; il comando di mutazione, partendo davvero, non deve
    essere scambiato per un successo del guard.
 3. **Ripristino.** Ricopiare i byte originali, verificare che l'hash coincida
@@ -408,19 +458,24 @@ prima i suoi byte e il suo hash e ripristinandoli in un `finally`:
    stato pulito. Devono comparire due `MUTATION_SAFETY: PASS` consecutivi; solo
    allora il meccanismo è considerato integro.
 
-Eseguito su questa macchina, il controllo ha prodotto exit 1 per entrambi i
-casi. Con l'harness definitivo:
+Eseguito su questa macchina, il safety ha prodotto exit 1 per entrambi i casi.
+Con l'harness definitivo:
 
 ```text
 TREE_KILL: FAIL: AssertionError: watchdog non sopravvissuto a taskkill /T: pid ... morto prima del ripristino (transazione=..., hash_restored=False)
-OUT_OF_TREE_UNAVAILABLE: FAIL: AssertionError: out-of-tree assente: atteso exit 2, ottenuto 0
+OUT_OF_TREE_UNAVAILABLE: FAIL: AssertionError: out-of-tree assente: atteso exit 2, ottenuto 0 oppure 1 (o "un comando ancora in esecuzione dopo 240s")
 MUTATION_SAFETY: FAIL
+# il numero dipende dalla suite E2E non protetta: 0 se passa, 1 se fallisce
 ```
 
 Il primo FAIL non è un timeout e non contiene un traceback di orchestrazione;
-il secondo riporta l'exit reale del comando. Dopo il ripristino i sei hash
+il secondo riporta l'exit reale del comando. Dopo il ripristino i sette hash
 erano identici a quelli iniziali e non restavano transazioni, lock o processi
-watchdog.
+watchdog. La verifica automatica eseguita il 6 novembre 2026 su una copia
+isolata ha prodotto `2 passed in 304.95 s`, exit 0, con gli hash iniziali
+invariati. La suite completa nella stessa copia ha prodotto
+**`93 passed in 348.19 s`**, exit 0, con 93 test raccolti; la sorgente non è
+stata modificata durante la campagna.
 
 Per il secondo invariante il comando esegue cinque run della suite
 `tests/test_tutor_service.py` con pytest reale, poi sostituisce i tre
@@ -453,11 +508,12 @@ e pytest esce con codice 2. In ognuna delle tre esecuzioni entrambi i fault
 hanno ripristinato il file byte-identico al backup, con lock presente e
 mutazione assente. Processo e porta vengono chiusi anche in caso di errore.
 
-La suite completa conta **79 test**. I controlli coprono la copia profonda della
+La suite completa conta **93 test** (il numero corrente si verifica con
+`python -m pytest tests --collect-only -q`). I controlli coprono la copia profonda della
 cache, la cache delle astensioni SSE, la scrittura atomica dell'indice, il
 limite `Host` sul loopback, la chiusura delle connessioni con corpo non letto,
 l'espansione delle query (baseline 0/39, espansa 39/39, scheda attesa in prima
-posizione, default spento, cache e limite 800 invariati), il report unico
+posizione, default acceso, cache e limite 800 invariati), il report unico
 `--compare` e il comportamento del client web.
 
 Il client web ha finalmente una prova eseguibile, non solo sintattica:
@@ -515,6 +571,15 @@ parole chiave attese, non correttezza semantica: un 1,00 su un eval curato non
 Una domanda in ambito ("che cosa è l'humus e perché è importante") condivide una
 sola parola di contenuto con la scheda; viene recuperata dal tentativo
 ristretto per materia, ed è il motivo per cui quel tentativo esiste.
+
+Il recupero in dominio non garantisce la scheda in testa quando la domanda
+condivide due termini con una scheda e uno solo con quella giusta: «come
+respirano le piante?» non si astiene più — prima la forma verbale `respirano`
+non coincideva con `respirazione` — ma mette davanti `bio.fotosintesi`, che
+contiene sia `respir` sia `piante`, invece di `bio.respirazione`, che contiene
+solo `respir` e viene scartata dal vincolo dei due termini. Il caso è lasciato
+visibile: correggerlo con una regola ad hoc significherebbe calibrare il
+retriever sulla domanda che si è appena letta.
 
 ---
 

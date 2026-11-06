@@ -1,7 +1,7 @@
 """Espansione controllata delle query con un dizionario di sinonimi.
 
-Il dizionario non vive nel codice: arriva da ``configs/tutor.yaml`` ed e'
-disattivato per default. L'espansione tocca solo la stringa usata dal retriever:
+Il dizionario non vive nel codice: arriva da ``configs/tutor.yaml``, dove e'
+attivo per default. L'espansione tocca solo la stringa usata dal retriever:
 la domanda mostrata, la chiave della cache e il limite di 800 caratteri restano
 quelli originali. Le regole possono essere di una parola (``stallatico`` ->
 ``letame``) o di piu' parole (``corso d'acqua`` -> ``fiume``); le piu' lunghe

@@ -244,6 +244,11 @@
             testo += evento.text;
             risposta.innerHTML = formatta(testo);
           } else if (evento.type === 'degraded') {
+            // Il backend e' caduto a meta' stream: il server riparte
+            // dall'estrattivo e invia la risposta completa in un solo token.
+            // Sommare quel testo ai pezzi gia' ricevuti mostrerebbe allo
+            // studente due risposte incollate, quindi si riparte da zero.
+            testo = '';
             risposta.classList.add('astensione');
           } else if (evento.type === 'done') {
             if (!fallito) {

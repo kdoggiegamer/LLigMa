@@ -77,6 +77,12 @@ from lligma.tutor.text import normalize  # noqa: E402
 READY_TIMEOUT_SECONDS = 10.0
 STOP_TIMEOUT_SECONDS = 5.0
 POLL_INTERVAL_SECONDS = 0.05
+# Attesa perche' i 100 abort SSE arrivino tutti al contatore. Non e' il timeout
+# di arresto del processo: con 100 handler vivi che devono accorgersi di una
+# socket chiusa, su una macchina carica 5 s non bastano (osservati 95/100 in due
+# esecuzioni della suite completa, 100/100 con il test da solo). L'invariante
+# verificato resta delta == 100; cambia solo quanto si aspetta che converga.
+ABORT_SETTLE_TIMEOUT_SECONDS = 30.0
 STREAM_TEST_DELAY_ENV = "LLIGMA_TUTOR_TEST_SSE_DELAY_MS"
 STREAM_TEST_DELAY_MS = "100"
 CONCURRENT_ABORTS = 100
@@ -789,7 +795,9 @@ def test_server_e2e_concurrent_aborts_and_complete_stream():
             if healthy_sock is not None:
                 healthy_sock.close()
 
-        health = server.wait_for_stream_aborts(expected=expected_aborts)
+        health = server.wait_for_stream_aborts(
+            expected=expected_aborts, timeout=ABORT_SETTLE_TIMEOUT_SECONDS
+        )
         after = int(health.get("stream_aborts") or 0)
         delta = after - before
         print(f"  stream_aborts delta={delta} (atteso {expected_aborts})")

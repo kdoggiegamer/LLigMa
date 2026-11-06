@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alessandria — Tutor + rewriter</title>
+<style>
+  :root {
+    --verde: #2f6b46;
+    --verde-scuro: #1d4b31;
+    --verde-chiaro: #e6f1e9;
+    --menta: #9be7b0;
+    --terra: #9a6b45;
+    --inchiostro: #17251d;
+    --grigio: #5f6d64;
+    --bordo: #d8e3da;
+    --carta: #f4f7f2;
+    --ombra: 0 1px 2px rgba(24, 45, 33, .05), 0 14px 40px rgba(24, 45, 33, .07);
+    --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { color-scheme: light; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--inchiostro);
+    background:
+      radial-gradient(900px 420px at 8% -10%, rgba(155, 231, 176, .24), transparent 62%),
+      radial-gradient(700px 380px at 100% 0%, rgba(154, 107, 69, .10), transparent 60%),
+      var(--carta);
+    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    padding: 18px clamp(18px, 4vw, 52px); border-bottom: 1px solid var(--bordo);
+    background: rgba(255, 255, 255, .72); backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .mark {
+    width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center;
+    background: var(--verde-scuro); color: #fff; font-weight: 750; letter-spacing: .5px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .brand h1 { margin: 0; font-size: 17px; letter-spacing: -.2px; }
+  .brand p { margin: 1px 0 0; color: var(--grigio); font-size: 12.5px; }
+  .status {
+    display: inline-flex; align-items: center; gap: 8px; max-width: 48vw;
+    border: 1px solid var(--bordo); border-radius: 999px; background: #fff;
+    padding: 7px 12px; font-size: 12px; color: var(--grigio); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #c08a4e; flex: 0 0 auto; }
+  .status.ready .dot { background: #3f9c62; box-shadow: 0 0 0 4px rgba(63,156,98,.13); }
+  .status.error .dot { background: #b34b45; }
+  main { width: min(1220px, 100%); margin: 0 auto; padding: clamp(24px, 4vw, 46px) clamp(18px, 4vw, 52px) 34px; }
+  .intro { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 18px; }
+  .eyebrow { color: var(--terra); font-size: 11px; font-weight: 750; letter-spacing: 1.7px; }
+  .intro h2 { margin: 7px 0 0; font-size: clamp(24px, 3.2vw, 38px); line-height: 1.08; letter-spacing: -1.2px; max-width: 760px; }
+  .intro > p { max-width: 360px; margin: 0 0 4px; color: var(--grigio); font-size: 13.5px; }
+  .modebar {
+    display: inline-flex; gap: 3px; padding: 3px; margin-bottom: 18px;
+    border: 1px solid var(--bordo); border-radius: 12px; background: rgba(255,255,255,.8);
+  }
+  .mode-tab {
+    border: 0; border-radius: 9px; background: transparent; color: var(--grigio);
+    padding: 8px 13px; font: 600 12.5px inherit; cursor: pointer;
+  }
+  .mode-tab:hover { color: var(--verde-scuro); }
+  .mode-tab.is-active { background: var(--verde-scuro); color: #fff; box-shadow: 0 2px 7px rgba(29,75,49,.16); }
+  .grid { display: grid; grid-template-columns: minmax(320px, .85fr) minmax(0, 1.15fr); gap: 18px; align-items: stretch; }
+  .card {
+    background: rgba(255,255,255,.94); border: 1px solid var(--bordo); border-radius: 18px;
+    box-shadow: var(--ombra); min-width: 0;
+  }
+  .composer { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .card-head h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--verde-scuro); }
+  .tag {
+    display: inline-block; border: 1px solid var(--bordo); border-radius: 999px;
+    padding: 3px 9px; background: #fbfdfb; color: var(--grigio);
+    font-size: 10.5px; letter-spacing: .25px; white-space: nowrap;
+  }
+  textarea {
+    width: 100%; min-height: 170px; resize: vertical; padding: 15px;
+    border: 1px solid var(--bordo); border-radius: 12px; background: #fbfdfb;
+    color: var(--inchiostro); font: 15px/1.55 var(--mono);
+  }
+  textarea:focus { outline: 2px solid var(--verde); outline-offset: 1px; border-color: transparent; }
+  .examples { display: flex; flex-wrap: wrap; gap: 7px; }
+  .examples button {
+    border: 1px solid var(--bordo); border-radius: 999px; background: #fff;
+    color: var(--grigio); padding: 6px 10px; font: inherit; font-size: 11.5px;
+    cursor: pointer; transition: border-color .15s, color .15s, background .15s;
+  }
+  .examples button:hover { border-color: var(--verde); color: var(--verde-scuro); background: var(--verde-chiaro); }
+  .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+  .controls label { display: grid; gap: 5px; font-size: 11.5px; color: var(--grigio); }
+  .control-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .control-line output { color: var(--verde-scuro); font: 600 11.5px var(--mono); }
+  .controls input[type="number"] {
+    width: 100%; border: 1px solid var(--bordo); border-radius: 8px; background: #fff;
+    padding: 8px 9px; font: 13px var(--mono); color: var(--inchiostro);
+  }
+  .controls input[type="range"] { width: 100%; accent-color: var(--verde); margin: 2px 0; }
+  .actions { display: flex; align-items: center; gap: 9px; margin-top: 2px; }
+  button.primary, button.secondary {
+    border-radius: 10px; padding: 11px 18px; font-size: 13.5px; font-weight: 650;
+    font-family: inherit; cursor: pointer; transition: transform .1s, filter .15s, background .15s;
+  }
+  button.primary { border: 1px solid var(--verde-scuro); background: var(--verde-scuro); color: #fff; box-shadow: 0 6px 14px rgba(29,75,49,.14); }
+  button.primary:hover { filter: brightness(1.08); }
+  button.primary:active { transform: translateY(1px); }
+  button.secondary { border: 1px solid var(--bordo); background: #fff; color: var(--verde-scuro); }
+  button.secondary:hover { background: var(--verde-chiaro); }
+  button:disabled { opacity: .45; cursor: not-allowed; filter: none; transform: none; }
+  .prompt-meta { margin-left: auto; color: var(--grigio); font: 11px var(--mono); }
+  .hint { margin: 0; color: var(--grigio); font-size: 11.5px; line-height: 1.45; }
+  .output-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .output {
+    min-height: 250px; max-height: 390px; overflow: auto; padding: 17px;
+    border-radius: 12px; background: #10231a; color: #d8f3df;
+    border: 1px solid #234735; font: 14px/1.7 var(--mono);
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .output .placeholder { color: #779786; font-family: inherit; }
+  .output.streaming::after { content: "▍"; color: var(--menta); animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .stat { border: 1px solid var(--bordo); border-radius: 11px; background: #fbfdfb; padding: 10px 11px; min-width: 0; }
+  .stat span { display: block; color: var(--grigio); font-size: 10.5px; line-height: 1.2; }
+  .stat strong { display: inline-block; margin-top: 5px; font: 650 19px/1 var(--mono); letter-spacing: -.5px; }
+  .stat small { margin-left: 4px; color: var(--grigio); font-size: 10px; }
+  .run-info { min-height: 18px; color: var(--grigio); font-size: 11.5px; }
+  .run-info strong { color: var(--verde-scuro); font-weight: 650; }
+  .baseline {
+    border-left: 3px solid var(--terra); background: #fcf8f3; border-radius: 0 10px 10px 0;
+    padding: 11px 13px;
+  }
+  .baseline-head, .sources-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .baseline-head h4, .sources-head h4 { margin: 0; font-size: 11.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--terra); }
+  .baseline p { margin: 0; color: #4d4a42; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+  .sources { border-top: 1px solid var(--bordo); padding-top: 12px; }
+  .sources-head h4 { color: var(--verde-scuro); }
+  .source-card {
+    border: 1px solid var(--bordo); border-radius: 10px; background: #fbfdfb;
+    padding: 10px 12px; margin-top: 7px;
+  }
+  .source-card .source-title { font-size: 12.5px; font-weight: 650; color: var(--inchiostro); }
+  .source-card .source-meta { color: var(--terra); font-size: 10.5px; text-transform: uppercase; letter-spacing: .35px; margin-top: 2px; }
+  .source-card p { margin: 6px 0 0; color: var(--grigio); font-size: 12px; line-height: 1.5; }
+  footer { width: min(1220px, 100%); margin: 0 auto; padding: 0 clamp(18px, 4vw, 52px) 28px; color: var(--grigio); font-size: 11.5px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  @media (max-width: 900px) {
+    .intro { align-items: start; flex-direction: column; gap: 12px; }
+    .intro > p { max-width: 620px; }
+    .grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .output { min-height: 230px; max-height: 380px; }
+  }
+  @media (max-width: 520px) {
+    .topbar { align-items: flex-start; padding: 14px 16px; }
+    .status { max-width: 42vw; }
+    main { padding: 22px 14px 24px; }
+    .composer, .output-card { padding: 14px; }
+    .controls { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .intro h2 { font-size: 27px; }
+    .modebar { width: 100%; }
+    .mode-tab { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="mark">AL</div>
+    <div>
+      <h1>Alessandria</h1>
+      <p>Tutor retrieval + LLigMa · generazione locale</p>
+    </div>
+  </div>
+  <div class="status" id="status" title="Stato del modello">
+    <span class="dot"></span><span id="statusText">connessione…</span>
+  </div>
+</header>
+
+<main>
+  <section class="intro">
+    <div>
+      <div class="eyebrow">PICCOLA ALESSANDRIA · LABORATORIO</div>
+      <h2>Una domanda. Il Tutor cerca, LLigMa riscrive.</h2>
+    </div>
+    <p>La risposta extractive è la baseline affidabile. LLigMa è in prova come rewriter: la pagina mostra cosa riceve, cosa produce e quanto costa.</p>
+  </section>
+
+  <nav class="modebar" aria-label="Modalità del playground">
+    <button type="button" class="mode-tab is-active" data-mode="tutor" aria-pressed="true">Tutor + LLigMa</button>
+    <button type="button" class="mode-tab" data-mode="raw" aria-pressed="false">Solo completamento</button>
+  </nav>
+
+  <section class="grid">
+    <article class="card composer">
+      <div class="card-head">
+        <h3 id="promptHeading">Domanda</h3>
+        <span class="tag" id="modelTag">modello in caricamento</span>
+      </div>
+
+      <label class="sr-only" for="prompt">Domanda o prompt</label>
+      <textarea id="prompt" maxlength="800" spellcheck="false" autocomplete="off">Perché è utile alternare le colture nel corso degli anni?</textarea>
+
+      <div class="examples" id="examples" aria-label="Esempi"></div>
+
+      <div class="controls">
+        <label for="maxTokens">
+          <span class="control-line"><span>Max token</span><output id="maxTokensValue">64</output></span>
+          <input type="number" id="maxTokens" min="1" max="256" step="1" value="64">
+        </label>
+        <label for="temperature">
+          <span class="control-line"><span>Temperatura</span><output id="temperatureValue">0.8</output></span>
+          <input type="range" id="temperature" min="0" max="1.5" step="0.1" value="0.8">
+        </label>
+        <label for="topP">
+          <span class="control-line"><span>Top-p</span><output id="topPValue">0.90</output></span>
+          <input type="range" id="topP" min="0.1" max="1" step="0.05" value="0.9">
+        </label>
+        <label for="repetition">
+          <span class="control-line"><span>Repetition</span><output id="repetitionValue">1.10</output></span>
+          <input type="range" id="repetition" min="1" max="2" step="0.05" value="1.1">
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="primary" id="generate">Rispondi</button>
+        <button type="button" class="secondary" id="stop" disabled>Ferma</button>
+        <span class="prompt-meta" id="promptCount">0 / 4000</span>
+      </div>
+      <p class="hint">In modalità Tutor la risposta extractive resta la baseline; LLigMa è un rewriter sperimentale. Ctrl + Invio per avviare.</p>
+    </article>
+
+    <article class="card output-card">
+      <div class="card-head">
+        <h3>Risultato</h3>
+        <span class="tag" id="backendTag">tutor + LLigMa</span>
+      </div>
+
+      <div class="output" id="output" aria-live="polite"><span class="placeholder">La risposta del modello apparirà qui, token dopo token…</span></div>
+
+      <div class="stats" aria-label="Misure della generazione">
+        <div class="stat"><span>Tempo totale</span><strong id="total">—</strong><small>ms</small></div>
+        <div class="stat"><span>Primo token</span><strong id="ttft">—</strong><small>ms</small></div>
+        <div class="stat"><span>Token</span><strong id="tokens">—</strong><small>generati</small></div>
+        <div class="stat"><span>Velocità</span><strong id="tps">—</strong><small>tok/s</small></div>
+        <div class="stat" id="retrievalStat"><span>Tutor</span><strong id="retrieval">—</strong><small>ms</small></div>
+      </div>
+
+      <div class="run-info" id="runInfo">In attesa di una domanda.</div>
+
+      <div class="baseline" id="baselineBox" hidden>
+        <div class="baseline-head">
+          <h4>Risposta extractive · baseline</h4>
+          <span class="tag">Tutor</span>
+        </div>
+        <p id="baselineText"></p>
+      </div>
+
+      <div class="sources" id="sourcesBox" hidden>
+        <div class="sources-head">
+          <h4>Fonti recuperate</h4>
+          <span class="tag" id="sourceCount">0</span>
+        </div>
+        <div id="sourceList"></div>
+      </div>
+    </article>
+  </section>
+</main>
+
+<footer>Alessandria · LLigMa · inferenza locale su CPU · la conoscenza resta nell’indice, non nei pesi</footer>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const promptEl = $('prompt');
+  const promptHeading = $('promptHeading');
+  const examplesEl = $('examples');
+  const generateBtn = $('generate');
+  const stopBtn = $('stop');
+  const outputEl = $('output');
+  const totalEl = $('total');
+  const ttftEl = $('ttft');
+  const tokensEl = $('tokens');
+  const tpsEl = $('tps');
+  const retrievalEl = $('retrieval');
+  const retrievalStat = $('retrievalStat');
+  const runInfo = $('runInfo');
+  const statusEl = $('status');
+  const statusText = $('statusText');
+  const modelTag = $('modelTag');
+  const backendTag = $('backendTag');
+  const promptCount = $('promptCount');
+  const baselineBox = $('baselineBox');
+  const baselineText = $('baselineText');
+  const sourcesBox = $('sourcesBox');
+  const sourceList = $('sourceList');
+  const sourceCount = $('sourceCount');
+
+  const EXAMPLES = {
+    tutor: [
+      "Perché è utile alternare le colture nel corso degli anni?",
+      "Come si passa dal DNA alla proteina?",
+      "In che anno è ambientato il romanzo di Manzoni?",
+      "Chi ha vinto i campionati mondiali di calcio del 2022?"
+    ],
+    raw: [
+      "La capitale d'Italia è",
+      "Dante Alighieri è nato a",
+      "La fotosintesi clorofilliana è",
+      "La rotazione delle colture serve a"
+    ]
+  };
+
+  let mode = 'tutor';
+  let controller = null;
+  let timer = null;
+  let startedAt = 0;
+  let firstAt = null;
+  let tokenCount = 0;
+  let promptTokens = 0;
+  let retrievalMs = 0;
+  let baselineMs = 0;
+  let health = null;
+
+  const formatInt = (value) => Number(value).toLocaleString('it-IT');
+  const formatParams = (value) => `${(Number(value) / 1e6).toFixed(1)}M`;
+  const setStatus = (text, kind = '') => {
+    statusText.textContent = text;
+    statusEl.className = `status ${kind}`.trim();
+  };
+  const showReadyStatus = () => {
+    if (health) {
+      setStatus(`${health.device.toUpperCase()} · ${formatParams(health.parameters)} parametri`, 'ready');
+    } else {
+      setStatus('pronto', 'ready');
+    }
+  };
+
+  function setOutput(text, streaming) {
+    outputEl.textContent = text;
+    outputEl.classList.toggle('streaming', !!streaming);
+    if (!text) {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'placeholder';
+      placeholder.textContent = 'La risposta del modello apparirà qui, token dopo token…';
+      outputEl.replaceChildren(placeholder);
+    }
+  }
+
+  function resetMetrics() {
+    totalEl.textContent = '—';
+    ttftEl.textContent = '—';
+    tokensEl.textContent = '—';
+    tpsEl.textContent = '—';
+    retrievalEl.textContent = '—';
+    retrievalStat.title = '';
+  }
+
+  function clearResult() {
+    setOutput('', false);
+    baselineText.textContent = '';
+    baselineBox.hidden = true;
+    sourceList.replaceChildren();
+    sourcesBox.hidden = true;
+    sourceCount.textContent = '0';
+    resetMetrics();
+    runInfo.textContent = mode === 'tutor' ? 'In attesa di una domanda.' : 'In attesa di un prompt.';
+    backendTag.textContent = mode === 'tutor' ? 'tutor + LLigMa' : 'completamento';
+  }
+
+  function renderExamples() {
+    examplesEl.replaceChildren();
+    for (const prompt of EXAMPLES[mode]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = prompt;
+      button.addEventListener('click', () => {
+        promptEl.value = prompt;
+        promptEl.dispatchEvent(new Event('input'));
+        promptEl.focus();
+      });
+      examplesEl.appendChild(button);
+    }
+  }
+
+  function setMode(next) {
+    if (controller) controller.abort();
+    mode = next;
+    document.querySelectorAll('.mode-tab').forEach((tab) => {
+      const active = tab.dataset.mode === mode;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-pressed', String(active));
+    });
+    promptHeading.textContent = mode === 'tutor' ? 'Domanda' : 'Prompt';
+    generateBtn.textContent = mode === 'tutor' ? 'Rispondi' : 'Genera';
+    promptEl.placeholder = mode === 'tutor'
+      ? 'Scrivi una domanda sulle schede del Tutor…'
+      : 'Scrivi un testo da completare…';
+    promptEl.maxLength = mode === 'tutor' ? 800 : 4000;
+    promptEl.value = EXAMPLES[mode][0];
+    promptEl.dispatchEvent(new Event('input'));
+    retrievalStat.hidden = mode !== 'tutor';
+    clearResult();
+    renderExamples();
+  }
+
+  function tick() {
+    if (!startedAt) return;
+    const elapsed = performance.now() - startedAt;
+    totalEl.textContent = Math.round(elapsed);
+    if (firstAt !== null) ttftEl.textContent = Math.round(firstAt - startedAt);
+    tokensEl.textContent = tokenCount;
+    if (tokenCount > 0 && elapsed > 0) {
+      tpsEl.textContent = (tokenCount / (elapsed / 1000)).toFixed(1);
+    }
+  }
+
+  function stopTimer() {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  function setBusy(busy) {
+    generateBtn.disabled = busy;
+    stopBtn.disabled = !busy;
+  }
+
+  function finish(metrics, abstained) {
+    stopTimer();
+    setBusy(false);
+    controller = null;
+    if (!metrics) return;
+    const elapsed = Number(metrics.elapsed_ms || 0);
+    totalEl.textContent = formatInt(elapsed);
+    ttftEl.textContent = metrics.ttft_ms === null || metrics.ttft_ms === undefined
+      ? '—' : formatInt(metrics.ttft_ms);
+    tokensEl.textContent = formatInt(metrics.tokens || 0);
+    tpsEl.textContent = Number(metrics.tps || 0).toFixed(2);
+    if (mode === 'tutor') {
+      retrievalEl.textContent = formatInt(retrievalMs);
+      retrievalStat.title = `recupero ${retrievalMs} ms · baseline ${baselineMs} ms`;
+    }
+    if (abstained) {
+      runInfo.textContent = `Tutor ${formatInt(retrievalMs)} ms · astensione · nessuna generazione`;
+    } else {
+      runInfo.textContent = (mode === 'tutor' ? `Tutor ${formatInt(retrievalMs)} ms · ` : '') +
+        `${formatInt(metrics.tokens || 0)} token · ${formatInt(elapsed)} ms · ${Number(metrics.tps || 0).toFixed(2)} tok/s`;
+    }
+  }
+
+  function renderBaseline(text) {
+    baselineText.textContent = text || '';
+    baselineBox.hidden = !text;
+  }
+
+  function renderSources(sources) {
+    sourceList.replaceChildren();
+    sourceCount.textContent = String((sources || []).length);
+    sourcesBox.hidden = !sources || !sources.length;
+    for (const source of sources || []) {
+      const card = document.createElement('article');
+      card.className = 'source-card';
+      const title = document.createElement('div');
+      title.className = 'source-title';
+      const numbers = Array.isArray(source.numbers) && source.numbers.length
+        ? `[${source.numbers.join(', ')}] ` : '';
+      title.textContent = `${numbers}${source.title || 'Fonte'}`;
+      const meta = document.createElement('div');
+      meta.className = 'source-meta';
+      meta.textContent = `${source.subject || 'Generale'} · ${source.source || 'fonte'}`;
+      const quote = document.createElement('p');
+      quote.textContent = source.quote || '';
+      card.append(title, meta, quote);
+      sourceList.appendChild(card);
+    }
+  }
+
+  async function generate() {
+    if (controller) return;
+    const input = promptEl.value.trim();
+    if (!input) {
+      setStatus('scrivi una domanda', 'error');
+      promptEl.focus();
+      return;
+    }
+
+    controller = new AbortController();
+    setBusy(true);
+    setStatus('generazione…');
+    clearResult();
+    setOutput('', true);
+    startedAt = performance.now();
+    firstAt = null;
+    tokenCount = 0;
+    promptTokens = 0;
+    retrievalMs = 0;
+    baselineMs = 0;
+    timer = setInterval(tick, 100);
+
+    const endpoint = mode === 'tutor' ? '/api/tutor/stream' : '/api/stream';
+    const body = {
+      max_new_tokens: Number($('maxTokens').value),
+      temperature: Number($('temperature').value),
+      top_p: Number($('topP').value),
+      repetition_penalty: Number($('repetition').value),
+    };
+    if (mode === 'tutor') body.question = input;
+    else body.prompt = input;
+
+    let text = '';
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let failed = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const blocks = buffer.split('\n\n');
+        buffer = blocks.pop();
+
+        for (const block of blocks) {
+          const line = block.split('\n').find((entry) => entry.startsWith('data: '));
+          if (!line) continue;
+          const event = JSON.parse(line.slice(6));
+
+          if (event.type === 'meta') {
+            promptTokens = event.prompt_tokens || 0;
+            modelTag.textContent = `${event.model} · ${event.device}`;
+            if (event.mode === 'tutor') {
+              backendTag.textContent = 'tutor + LLigMa';
+              retrievalMs = Number(event.retrieval_ms || 0);
+              baselineMs = Number(event.baseline_ms || 0);
+              retrievalEl.textContent = formatInt(retrievalMs);
+              retrievalStat.title = `recupero ${retrievalMs} ms · baseline ${baselineMs} ms`;
+              renderBaseline(event.baseline);
+              renderSources(event.sources);
+              if (event.abstained) setStatus('astensione', 'ready');
+            } else {
+              backendTag.textContent = 'completamento';
+            }
+          } else if (event.type === 'token') {
+            if (firstAt === null) firstAt = performance.now();
+            text += event.text;
+            tokenCount = event.tokens || tokenCount;
+            setOutput(text, true);
+            tick();
+          } else if (event.type === 'done') {
+            if (event.abstained) {
+              setOutput('Il Tutor non ha trovato fonti sufficienti per rispondere. La baseline è mostrata sotto.', false);
+              setStatus('astensione', 'ready');
+            } else {
+              text = event.text || text;
+              setOutput(text || 'Il modello non ha prodotto testo visibile.', false);
+              setStatus('pronto', 'ready');
+            }
+            finish(event, !!event.abstained);
+            backendTag.textContent = mode === 'tutor' ? 'tutor + LLigMa' : 'completamento';
+          } else if (event.type === 'error') {
+            failed = event.message || 'errore di generazione';
+          }
+        }
+      }
+
+      if (failed) throw new Error(failed);
+    } catch (error) {
+      stopTimer();
+      if (error.name === 'AbortError') {
+        totalEl.textContent = formatInt(Math.round(performance.now() - startedAt));
+        tokensEl.textContent = formatInt(tokenCount);
+        tpsEl.textContent = '0.00';
+        setOutput(text || 'Nessun testo visibile: generazione fermata prima del primo token.', false);
+        setStatus('interrotto');
+        runInfo.textContent = `${formatInt(tokenCount)} token parziali · generazione fermata`;
+      } else {
+        setOutput(text || `Errore: ${error.message}`, false);
+        setStatus('errore', 'error');
+        runInfo.textContent = error.message;
+      }
+    } finally {
+      if (controller) {
+        controller = null;
+        setBusy(false);
+      }
+    }
+  }
+
+  promptEl.addEventListener('input', () => {
+    promptCount.textContent = `${promptEl.value.length} / ${promptEl.maxLength}`;
+  });
+  promptEl.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      generate();
+    }
+  });
+  generateBtn.addEventListener('click', generate);
+  stopBtn.addEventListener('click', () => {
+    if (controller) controller.abort();
+  });
+
+  document.querySelectorAll('.mode-tab').forEach((tab) => {
+    tab.addEventListener('click', () => setMode(tab.dataset.mode));
+  });
+
+  $('maxTokens').addEventListener('input', (event) => {
+    $('maxTokensValue').textContent = event.target.value;
+  });
+  $('temperature').addEventListener('input', (event) => {
+    $('temperatureValue').textContent = Number(event.target.value).toFixed(1);
+  });
+  $('topP').addEventListener('input', (event) => {
+    $('topPValue').textContent = Number(event.target.value).toFixed(2);
+  });
+  $('repetition').addEventListener('input', (event) => {
+    $('repetitionValue').textContent = Number(event.target.value).toFixed(2);
+  });
+
+  setMode('tutor');
+
+  fetch('/api/health')
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then((data) => {
+      health = data;
+      modelTag.textContent = `${data.model.split(/[\\/]/).pop()} · ${data.device}`;
+      showReadyStatus();
+      const tutor = data.tutor || {};
+      statusEl.title = `${formatInt(data.parameters)} parametri · tying ${data.tied ? 'attivo' : 'assente'} · Tutor ${tutor.documents || '?'} schede / ${tutor.chunks || '?'} passaggi`;
+    })
+    .catch((error) => {
+      setStatus('server non raggiungibile', 'error');
+      modelTag.textContent = 'offline';
+      runInfo.textContent = error.message;
+    });
+})();
+</script>
+</body>
+</html>

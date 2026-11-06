@@ -239,6 +239,35 @@ async function interruptedStreamDoesNotUpdateHistory() {
   console.log('ok stream interrotto non aggiorna la cronologia');
 }
 
+async function degradedReplacesPartialText() {
+  const meta = normalEvents('')[0];
+  const degraded = [
+    meta,
+    { type: 'token', text: 'Risposta parziale del modello.' },
+    { type: 'degraded', message: 'Modello non disponibile: risposta estrattiva.' },
+    { type: 'token', text: 'Risposta estrattiva completa.' },
+    { type: 'done', latency_ms: 2.0, backend: 'extractive', cached: false, abstained: false },
+  ];
+  const client = makeClient([degraded, normalEvents('Dopo.')]);
+  await submit(client, 'Domanda con modello rotto');
+  const turno = client.ids.conversazione.children[0];
+  assert.strictEqual(
+    turno._response.innerHTML,
+    'Risposta estrattiva completa.',
+    'il testo parziale del modello non deve restare sopra la risposta estrattiva',
+  );
+  await submit(client, 'Domanda successiva');
+  assert.deepStrictEqual(
+    client.calls[1].history,
+    [
+      { role: 'user', content: 'Domanda con modello rotto' },
+      { role: 'assistant', content: 'Risposta estrattiva completa.' },
+    ],
+    'la cronologia deve contenere solo la risposta estrattiva',
+  );
+  console.log('ok degraded sostituisce il testo parziale');
+}
+
 async function errorEventDoesNotUpdateHistory() {
   const failed = [
     normalEvents('Risposta parziale.')[0],
@@ -256,6 +285,7 @@ async function errorEventDoesNotUpdateHistory() {
 (async () => {
   await doneUpdatesHistory();
   await interruptedStreamDoesNotUpdateHistory();
+  await degradedReplacesPartialText();
   await errorEventDoesNotUpdateHistory();
   console.log('web client harness: PASS');
 })().catch((error) => {

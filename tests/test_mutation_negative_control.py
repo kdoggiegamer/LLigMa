@@ -11,6 +11,12 @@ regressione a ``mutation_transaction.py``, esegue il safety e verifica il FAIL
 atteso. Il ripristino avviene sempre in ``finally``, anche su eccezioni o
 interruzioni, e viene verificato contro gli hash congelati.
 
+Con il guard out-of-tree sabotato il comando non protetto puo' uscire 0 o 1 a
+seconda che la suite E2E concorrente passi o fallisca sotto carico, oppure
+restare in esecuzione fino al timeout di 240 s del safety. Il test accetta
+questi esiti, perche' il contratto del guard e' soltanto "non exit 2 prima
+della mutazione"; il safety deve comunque fallire e riportare l'esito reale.
+
 Nessun backup o log viene scritto nel progetto: lo snapshot e' in memoria e
 l'output del sottoprocesso e' catturato. L'unico file temporaneo e' il canary
 del test di sabotaggio, creato in una directory temporanea del sistema.
@@ -19,6 +25,7 @@ del test di sabotaggio, creato in una directory temporanea del sistema.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import shutil
 import signal
@@ -37,11 +44,13 @@ INTERRUPTION = ROOT / "tests" / "mutation_interruption.py"
 TRANSACTION = ROOT / "tests" / "mutation_transaction.py"
 WATCHDOG = ROOT / "tests" / "mutation_watchdog.py"
 
+FROZEN_MANIFEST = ROOT / "tests" / "frozen_manifest.json"
+
 FROZEN = {
     "requirements.txt": "96827e935664b43f65f14142d1e6407b1226fd69389401ae5716f2dace1dc5e6",
     "lligma/tutor/server.py": "53cde9d799e13829710b99a0a624bac01150a22b86d0d5721a833f2222705e69",
-    "lligma/tutor/service.py": "8f506420102bef5c9233ebcc1f5506f4a0f1b0e6286199752fafe0d34ec2a5ca",
-    "tests/mutation_safety.py": "e68f6f966f748b6a5aa4184f730c4442350581eed5e56d8e0473bb24debb4cc8",
+    "lligma/tutor/service.py": "ba869e26806718ab7a856f05994ab37248d73b91d6e729adf4b2fe681badaa53",
+    "tests/mutation_safety.py": "b3c8d67a0429d52b13b0bcac849e5e726209831c777ba3d80c711a8b934e5c17",
     "tests/mutation_interruption.py": "ab5a96e8a112ac9c61461661554eb8f665fd19f756ad938f71997c5d5bc740e4",
     "tests/mutation_transaction.py": "8bce56baba0b7d5220dac201ada33c15aede3e5ba4ad673b63d42b0f9c5d7ea4",
     "tests/mutation_watchdog.py": "e215845280ff6716102ef696aee803ad2be874971788ea7197198129c6172df4",
@@ -88,7 +97,33 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def canonical_frozen() -> dict[str, str]:
+    payload = json.loads(FROZEN_MANIFEST.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or not all(
+        isinstance(key, str) and isinstance(value, str)
+        for key, value in payload.items()
+    ):
+        raise AssertionError(f"{FROZEN_MANIFEST.name}: manifest non valido")
+    return payload
+
+
 def assert_frozen(label: str) -> None:
+    canonical = canonical_frozen()
+    ledger_wrong = []
+    if set(canonical) != set(FROZEN):
+        ledger_wrong.append(
+            f"chiavi: FROZEN={sorted(FROZEN)} manifest={sorted(canonical)}"
+        )
+    for relative, expected in FROZEN.items():
+        if canonical.get(relative) != expected:
+            ledger_wrong.append(
+                f"{relative}: FROZEN={expected} manifest={canonical.get(relative)}"
+            )
+    if ledger_wrong:
+        raise AssertionError(
+            f"{label}: FROZEN non coincide con {FROZEN_MANIFEST.name}: "
+            + "; ".join(ledger_wrong)
+        )
     wrong = []
     for relative, expected in FROZEN.items():
         actual = sha256(ROOT / relative)
@@ -251,10 +286,65 @@ def run_all() -> None:
         "OUT_OF_TREE_UNAVAILABLE",
         GUARD_OLD,
         GUARD_NEW,
-        "out-of-tree assente: atteso exit 2, ottenuto 0",
+        # L'exit del comando non protetto dipende anche dalla suite E2E, che
+        # sotto carico puo' fallire prima della mutazione o restare in
+        # esecuzione fino al timeout. Il safety deve fallire in ogni caso e
+        # riportare che il guard non ha dato 2.
+        "out-of-tree assente: atteso exit 2, ottenuto",
     )
     assert_frozen("negative control complete")
     assert_no_artifacts("negative control complete")
+
+
+def assert_ledger_writer_refuses() -> None:
+    writer = ROOT / "outputs" / "frozen_ledger.py"
+    with tempfile.TemporaryDirectory(prefix="lligma-ledger-writer-") as directory:
+        root = Path(directory)
+        (root / "tests").mkdir()
+        control = root / "tests" / "test_mutation_negative_control.py"
+        manifest = root / "tests" / "frozen_manifest.json"
+        frozen = root / "frozen.txt"
+        control.write_text('FROZEN = {"frozen.txt": "' + "0" * 64 + '"}', encoding="utf-8")
+        manifest.write_text(json.dumps({"frozen.txt": "1" * 64}), encoding="utf-8")
+        frozen.write_text("mutated", encoding="utf-8")
+        before = {path: path.read_bytes() for path in (control, manifest, frozen)}
+        result = subprocess.run(
+            [sys.executable, str(writer), "--root", str(root), "--realign-from-disk"],
+            cwd=str(ROOT),
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=30,
+            check=False,
+        )
+        after = {path: path.read_bytes() for path in (control, manifest, frozen)}
+        if result.returncode != 3:
+            raise AssertionError(
+                f"ledger writer: atteso exit 3, ottenuto {result.returncode}: {result.stdout}"
+            )
+        if "LEDGER_REALIGNMENT_REFUSED" not in result.stdout:
+            raise AssertionError(f"ledger writer: messaggio assente: {result.stdout!r}")
+        changed = [str(path) for path in before if before[path] != after[path]]
+        if changed:
+            raise AssertionError(f"ledger writer: ha scritto: {changed}")
+        print("LEDGER_WRITER_REFUSAL: PASS")
+
+
+def assert_ledger_files_read_only() -> None:
+    if os.name != "nt":
+        return
+    for path in (Path(__file__).resolve(), FROZEN_MANIFEST):
+        try:
+            with path.open("r+b"):
+                pass
+        except PermissionError:
+            continue
+        raise AssertionError(
+            f"{path}: scrivibile; la protezione write-point del ledger non e' attiva"
+        )
+    print("LEDGER_WRITE_POINT_READONLY: PASS")
 
 
 def test_negative_control_automated() -> None:
@@ -262,6 +352,8 @@ def test_negative_control_automated() -> None:
 
 
 def test_restore_guard_detects_sabotage() -> None:
+    assert_ledger_writer_refuses()
+    assert_ledger_files_read_only()
     with tempfile.TemporaryDirectory(prefix="lligma-negative-control-sabotage-") as directory:
         canary = Path(directory) / "canary.txt"
         original = b"original\n"

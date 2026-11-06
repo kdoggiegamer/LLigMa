@@ -58,10 +58,13 @@ class IndexConfig:
 class ExpansionConfig:
     """Sinonimi applicati alla sola query di retrieval.
 
-    ``enabled`` resta falso per default: il repository versionato non cambia
-    comportamento finche' una scuola non decide di attivare il dizionario. Le
-    chiavi possono essere parole o frasi; i valori sono una stringa o una lista
-    di stringhe. La domanda mostrata, la cache e il limite di 800 caratteri non
+    Il default di questa dataclass resta spento: chi costruisce una
+    ``TutorConfig`` a mano non deve ricevere un dizionario che non ha chiesto.
+    La configurazione distribuita (``configs/tutor.yaml``) invece lo attiva,
+    perche' con il dizionario spento il set di parafrasi misura 0/39 e una
+    domanda in ambito riscritta con un sinonimo viene rifiutata. Le chiavi
+    possono essere parole o frasi; i valori sono una stringa o una lista di
+    stringhe. La domanda mostrata, la cache e il limite di 800 caratteri non
     vengono toccati dall'espansione.
     """
 

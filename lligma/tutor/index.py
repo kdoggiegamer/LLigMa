@@ -24,7 +24,29 @@ from typing import Iterable
 
 from .text import chunk_text, stem_tokens
 
-INDEX_VERSION = 1
+# Cambia quando cambia il modo in cui i termini vengono ridotti: i termini
+# ridotti sono salvati dentro l'indice, quindi un indice vecchio continuerebbe a
+# caricarsi e a cercare con chiavi diverse dalle nuove, senza alcun errore. Meglio
+# un errore esplicito che una ricerca silenziosamente sbagliata.
+INDEX_VERSION = 2
+
+
+def build_timestamp(override: str | None = None) -> str:
+    """Istante di costruzione, riproducibile quando serve.
+
+    ``built_at`` e' l'unico campo dell'indice che cambia fra due costruzioni con
+    le stesse schede. Per poter dimostrare che l'artefatto e' stabile si accetta
+    un valore esplicito oppure la convenzione ``SOURCE_DATE_EPOCH`` delle build
+    riproducibili: con quella variabile impostata, due costruzioni producono
+    file byte per byte identici (stesso contenuto, stesso timestamp).
+    """
+    if override:
+        return override
+    epoch = os.environ.get("SOURCE_DATE_EPOCH", "").strip()
+    if epoch.isdigit():
+        moment = datetime.fromtimestamp(int(epoch), timezone.utc)
+        return moment.isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 BM25_K1 = 1.5
 BM25_B = 0.75
 
@@ -160,6 +182,7 @@ class BM25Index:
         chunk_words: int = 110,
         overlap_words: int = 28,
         title_boost: float = 1.5,
+        built_at: str | None = None,
     ) -> "BM25Index":
         chunks: list[Chunk] = []
         document_list = list(documents)
@@ -184,7 +207,7 @@ class BM25Index:
                 )
         metadata = {
             "version": INDEX_VERSION,
-            "built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "built_at": build_timestamp(built_at),
             "documents": len(document_list),
             "chunks": len(chunks),
             "subjects": sorted({document.subject for document in document_list}),

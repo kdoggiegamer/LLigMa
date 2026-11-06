@@ -258,9 +258,10 @@ def test_evaluate_compare_reports_both_sets_in_one_run():
     assert "PASS" in output, output
 
 
-def test_expansion_default_is_off_and_cache_uses_the_original_question():
+def test_expansion_default_is_on_and_cache_uses_the_original_question():
+    """Il default distribuito attiva il dizionario: spento, le parafrasi sono 0/39."""
     config = TutorConfig.from_file(ROOT / "configs" / "tutor.yaml")
-    assert config.retrieval.expansion.enabled is False
+    assert config.retrieval.expansion.enabled is True
 
     disabled = make_paraphrase_service(expanded=False)
     assert disabled.retrieve("Che cosa è lo stallatico?", "agronomia")[0] == []
