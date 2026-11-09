@@ -1,0 +1,13 @@
+{
+  "id": "angelodellamorte/lligma-equal-time",
+  "title": "lligma equal time",
+  "code_file": "lligma-equal-time.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["angelodellamorte/lligma-code", "angelodellamorte/lligma-old-checkpoint"],
+  "competition_sources": [],
+  "kernel_sources": ["angelodellamorte/lligma-prep", "angelodellamorte/lligma-train-fp16"]
+}

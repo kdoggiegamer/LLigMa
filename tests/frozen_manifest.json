@@ -1,0 +1,9 @@
+{
+  "lligma/tutor/server.py": "53cde9d799e13829710b99a0a624bac01150a22b86d0d5721a833f2222705e69",
+  "lligma/tutor/service.py": "ba869e26806718ab7a856f05994ab37248d73b91d6e729adf4b2fe681badaa53",
+  "requirements.txt": "96827e935664b43f65f14142d1e6407b1226fd69389401ae5716f2dace1dc5e6",
+  "tests/mutation_interruption.py": "ab5a96e8a112ac9c61461661554eb8f665fd19f756ad938f71997c5d5bc740e4",
+  "tests/mutation_safety.py": "b3c8d67a0429d52b13b0bcac849e5e726209831c777ba3d80c711a8b934e5c17",
+  "tests/mutation_transaction.py": "8bce56baba0b7d5220dac201ada33c15aede3e5ba4ad673b63d42b0f9c5d7ea4",
+  "tests/mutation_watchdog.py": "e215845280ff6716102ef696aee803ad2be874971788ea7197198129c6172df4"
+}

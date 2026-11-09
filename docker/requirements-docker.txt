@@ -1,0 +1,10 @@
+# Dependencies for the ROCm container. torch is intentionally absent: the
+# rocm/pytorch base image already provides a ROCm build of it.
+transformers>=4.45,<5
+datasets>=2.20,<5
+tokenizers>=0.19
+PyYAML>=6.0
+safetensors>=0.4
+numpy>=1.26
+tqdm>=4.66
+accelerate>=0.34

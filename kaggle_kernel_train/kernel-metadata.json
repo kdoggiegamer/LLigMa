@@ -1,0 +1,17 @@
+{
+  "id": "angelodellamorte/lligma-train",
+  "title": "lligma train",
+  "code_file": "lligma-train.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "angelodellamorte/lligma-code"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "angelodellamorte/lligma-prep"
+  ]
+}

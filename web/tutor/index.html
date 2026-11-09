@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLigMa Tutor — Istituto Agrario</title>
+<style>
+  :root {
+    --verde: #2f6b46;
+    --verde-scuro: #1f4a31;
+    --verde-chiaro: #e8f1ea;
+    --terra: #8a6a4b;
+    --grigio: #5a6660;
+    --bordo: #d8e2da;
+    --sfondo: #f6f8f6;
+    --testo: #1d2a23;
+    --ombra: 0 1px 2px rgba(24, 45, 33, .06), 0 8px 24px rgba(24, 45, 33, .06);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--sfondo); color: var(--testo);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+  header {
+    background: #fff; border-bottom: 1px solid var(--bordo); padding: 14px 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .logo {
+    width: 38px; height: 38px; border-radius: 11px; background: var(--verde);
+    display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px;
+    letter-spacing: .5px;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+  header p { margin: 0; font-size: 13px; color: var(--grigio); }
+  .badge {
+    margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 999px;
+    background: var(--verde-chiaro); color: var(--verde-scuro); border: 1px solid var(--bordo);
+  }
+  main { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 22px 18px 130px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .chip {
+    border: 1px solid var(--bordo); background: #fff; color: var(--grigio);
+    border-radius: 999px; padding: 7px 15px; font-size: 14px; cursor: pointer;
+    transition: all .15s ease;
+  }
+  .chip:hover { border-color: var(--verde); color: var(--verde-scuro); }
+  .chip[aria-pressed="true"] { background: var(--verde); border-color: var(--verde); color: #fff; }
+  .turn { margin-bottom: 22px; }
+  .domanda {
+    display: flex; justify-content: flex-end; margin-bottom: 12px;
+  }
+  .domanda span {
+    background: var(--verde-scuro); color: #fff; padding: 10px 15px; border-radius: 14px 14px 4px 14px;
+    max-width: 78%; white-space: pre-wrap;
+  }
+  .risposta {
+    background: #fff; border: 1px solid var(--bordo); border-radius: 4px 14px 14px 14px;
+    padding: 15px 17px; box-shadow: var(--ombra); white-space: pre-wrap;
+  }
+  .risposta.astensione { border-left: 3px solid var(--terra); }
+  .cit { color: var(--verde); font-weight: 600; font-size: .86em; }
+  .meta { margin-top: 10px; font-size: 12px; color: var(--grigio); display: flex; gap: 10px; flex-wrap: wrap; }
+  .fonti { margin-top: 10px; }
+  .fonti summary {
+    cursor: pointer; font-size: 13px; color: var(--verde-scuro); font-weight: 550;
+    list-style: none;
+  }
+  .fonti summary::-webkit-details-marker { display: none; }
+  .fonti summary::before { content: "▸ "; }
+  .fonti[open] summary::before { content: "▾ "; }
+  .fonte {
+    border: 1px solid var(--bordo); border-radius: 10px; padding: 10px 12px; margin-top: 8px;
+    background: #fbfcfb; font-size: 13.5px;
+  }
+  .fonte h4 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+  .fonte .etichetta { color: var(--terra); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; }
+  .fonte p { margin: 6px 0 0; color: var(--grigio); }
+  .vuoto { text-align: center; color: var(--grigio); padding: 40px 10px; }
+  .vuoto h2 { font-size: 19px; color: var(--testo); margin-bottom: 6px; }
+  .esempi { display: grid; gap: 8px; max-width: 520px; margin: 22px auto 0; text-align: left; }
+  .esempi button {
+    background: #fff; border: 1px solid var(--bordo); border-radius: 10px; padding: 10px 13px;
+    font: inherit; font-size: 14px; color: var(--testo); cursor: pointer; text-align: left;
+  }
+  .esempi button:hover { border-color: var(--verde); }
+  form {
+    position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, var(--sfondo) 72%, transparent);
+    padding: 16px 18px 20px; display: flex; gap: 10px; justify-content: center;
+  }
+  form .inner { width: 100%; max-width: 860px; display: flex; gap: 10px; }
+  input[type="text"] {
+    flex: 1; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--bordo);
+    font: inherit; background: #fff; box-shadow: var(--ombra);
+  }
+  input[type="text"]:focus { outline: 2px solid var(--verde); outline-offset: 1px; }
+  button.invia {
+    background: var(--verde); color: #fff; border: 0; border-radius: 12px; padding: 0 22px;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button.invia:disabled { opacity: .55; cursor: progress; }
+  .attendere { color: var(--grigio); font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">LL</div>
+  <div>
+    <h1>LLigMa Tutor</h1>
+    <p>Agronomia · Biologia · Cultura generale italiana</p>
+  </div>
+  <div class="badge" id="stato">connessione…</div>
+</header>
+
+<main>
+  <div class="chips" id="materie" role="group" aria-label="Filtra per materia">
+    <button class="chip" data-materia="" aria-pressed="true">Tutte</button>
+    <button class="chip" data-materia="agronomia" aria-pressed="false">Agronomia</button>
+    <button class="chip" data-materia="biologia" aria-pressed="false">Biologia</button>
+    <button class="chip" data-materia="cultura" aria-pressed="false">Cultura generale</button>
+  </div>
+
+  <div id="conversazione">
+    <div class="vuoto" id="vuoto">
+      <h2>Chiedi qualcosa sui tuoi argomenti</h2>
+      <p>Rispondo solo usando il materiale del corso, e ti dico sempre da quale scheda arriva l'informazione.</p>
+      <div class="esempi">
+        <button>Perché si alternano le colture nello stesso campo?</button>
+        <button>Cosa succede nella fase luminosa della fotosintesi?</button>
+        <button>Quando si pota la vite e perché?</button>
+        <button>Quali sono i principi fondamentali della Costituzione?</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<form id="modulo" autocomplete="off">
+  <div class="inner">
+    <input type="text" id="domanda" name="domanda" placeholder="Scrivi la tua domanda…" maxlength="800"
+           aria-label="Domanda" required>
+    <button class="invia" type="submit" id="invia">Chiedi</button>
+  </div>
+</form>
+
+<script>
+(() => {
+  const stato = document.getElementById('stato');
+  const conversazione = document.getElementById('conversazione');
+  const vuoto = document.getElementById('vuoto');
+  const modulo = document.getElementById('modulo');
+  const input = document.getElementById('domanda');
+  const invia = document.getElementById('invia');
+  let materia = '';
+  let storico = [];
+
+  fetch('/api/health').then(r => r.json()).then(d => {
+    stato.textContent = d.backend === 'local' ? 'modello locale' :
+                        d.backend === 'openai' ? 'docente via API' : 'modalità estrattiva';
+    stato.title = `${d.chunks} passaggi · ${d.documents} schede`;
+  }).catch(() => { stato.textContent = 'offline'; });
+
+  document.getElementById('materie').addEventListener('click', (evento) => {
+    const chip = evento.target.closest('.chip');
+    if (!chip) return;
+    materia = chip.dataset.materia;
+    document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
+  });
+
+  document.querySelectorAll('.esempi button').forEach(button => {
+    button.addEventListener('click', () => { input.value = button.textContent; modulo.requestSubmit(); });
+  });
+
+  const scappa = (testo) => testo.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  // Evidenzia i riferimenti [1] [2] senza toccare il resto del testo.
+  const formatta = (testo) => scappa(testo).replace(/\[(\d{1,2})\]/g, '<span class="cit">[$1]</span>');
+
+  function aggiungiTurno(domanda) {
+    vuoto.style.display = 'none';
+    const turno = document.createElement('div');
+    turno.className = 'turn';
+    turno.innerHTML = `<div class="domanda"><span>${scappa(domanda)}</span></div>
+      <div class="risposta"><span class="attendere">Sto cercando nelle schede…</span></div>`;
+    conversazione.appendChild(turno);
+    turno.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    return turno.querySelector('.risposta');
+  }
+
+  function mostraFonti(contenitore, fonti) {
+    if (!fonti || !fonti.length) return;
+    const dettagli = document.createElement('details');
+    dettagli.className = 'fonti';
+    dettagli.innerHTML = `<summary>Fonti (${fonti.length})</summary>` +
+      fonti.map((f, i) => `<div class="fonte">
+        <div class="etichetta">${scappa(f.subject)}</div>
+        <h4>[${(f.numbers && f.numbers.length ? f.numbers : [i + 1]).join(', ')}] ${scappa(f.title)}</h4>
+        <p>${scappa(f.quote)}</p>
+      </div>`).join('');
+    contenitore.appendChild(dettagli);
+  }
+
+  async function chiedi(domanda) {
+    const risposta = aggiungiTurno(domanda);
+    invia.disabled = true;
+
+    const corpo = { question: domanda, subject: materia || null, history: storico.slice(-4) };
+    let testo = '';
+    let primeFonti = [];
+    let completato = false;
+    // Un evento error rende il turno non committable anche se il server
+    // chiudesse lo stream con un done: meglio nessuna cronologia che una
+    // cronologia con una risposta parziale.
+    let fallito = false;
+
+    try {
+      const rispostaHttp = await fetch('/api/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      });
+      if (!rispostaHttp.ok) throw new Error(`HTTP ${rispostaHttp.status}`);
+
+      const lettore = rispostaHttp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await lettore.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const eventi = buffer.split('\n\n');
+        buffer = eventi.pop();
+
+        for (const blocco of eventi) {
+          const riga = blocco.split('\n').find(l => l.startsWith('data: '));
+          if (!riga) continue;
+          const evento = JSON.parse(riga.slice(6));
+
+          if (evento.type === 'meta') {
+            primeFonti = evento.sources || [];
+            if (evento.abstained) risposta.classList.add('astensione');
+            risposta.innerHTML = '<span class="attendere">Sto scrivendo…</span>';
+          } else if (evento.type === 'token') {
+            testo += evento.text;
+            risposta.innerHTML = formatta(testo);
+          } else if (evento.type === 'degraded') {
+            // Il backend e' caduto a meta' stream: il server riparte
+            // dall'estrattivo e invia la risposta completa in un solo token.
+            // Sommare quel testo ai pezzi gia' ricevuti mostrerebbe allo
+            // studente due risposte incollate, quindi si riparte da zero.
+            testo = '';
+            risposta.classList.add('astensione');
+          } else if (evento.type === 'done') {
+            if (!fallito) {
+              completato = true;
+              if (evento.abstained) {
+                risposta.classList.add('astensione');
+                primeFonti = [];
+              }
+              const meta = document.createElement('div');
+              meta.className = 'meta';
+              meta.textContent = `${evento.latency_ms} ms · ${evento.backend}` +
+                                 (evento.cached ? ' · dalla cache' : '');
+              risposta.appendChild(meta);
+              mostraFonti(risposta, primeFonti);
+            }
+          } else if (evento.type === 'error') {
+            fallito = true;
+            completato = false;
+            risposta.textContent = evento.message;
+          }
+        }
+      }
+      // Una risposta interrotta o un evento error non e' un turno completo:
+      // non va inserita nella cronologia delle domande successive.
+      if (completato && !fallito) {
+        storico.push({ role: 'user', content: domanda }, { role: 'assistant', content: testo });
+      }
+    } catch (errore) {
+      fallito = true;
+      risposta.textContent = `Non riesco a contattare il tutor (${errore.message}). Controlla che il server sia avviato.`;
+    } finally {
+      invia.disabled = false;
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  modulo.addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    const domanda = input.value.trim();
+    if (!domanda || invia.disabled) return;
+    chiedi(domanda);
+  });
+})();
+</script>
+</body>
+</html>

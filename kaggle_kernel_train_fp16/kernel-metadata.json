@@ -1,0 +1,13 @@
+{
+  "id": "angelodellamorte/lligma-train-fp16",
+  "title": "lligma train fp16",
+  "code_file": "lligma-train-fp16.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["angelodellamorte/lligma-code", "angelodellamorte/lligma-old-checkpoint"],
+  "competition_sources": [],
+  "kernel_sources": ["angelodellamorte/lligma-prep"]
+}

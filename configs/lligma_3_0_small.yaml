@@ -1,0 +1,63 @@
+# LLigMa 3.0 Small — dense, ~0.39B parameters (386.7M with a 32K vocabulary).
+#
+# Why these choices, and where each one comes from:
+#   * MLA attention (q/kv latent ranks): DeepSeek-V2/V3. Compresses the KV cache
+#     instead of storing full key/value tensors per head.
+#   * SwiGLU feed-forward: PaLM / Llama. Three matrices (gate, up, down).
+#   * RMSNorm, pre-norm placement, RoPE: Llama.
+#   * Tied input/output embeddings: GPT-2 / Gemma. Saves V*H parameters, which
+#     matters a lot at this size.
+#   * Dense instead of MoE: the routed experts are what made the default preset
+#     ~16B. Dropping them is the single biggest reduction.
+#
+# Sizing rule used: aspect ratio (layers / hidden) = 24/1024, close to Llama-3.2-1B
+# (16/2048). intermediate_size = 4x hidden, in the range used by Qwen2.5-0.5B.
+model_type: lligma
+
+# Tokenizer: 32K is the practical choice at this scale. train.py overrides
+# vocab_size with the real tokenizer length, so keep this in sync with the
+# tokenizer you actually train (scripts/train_tokenizer.py defaults to 32768).
+vocab_size: 32768
+hidden_size: 1024
+intermediate_size: 4096
+num_hidden_layers: 24
+num_attention_heads: 16
+head_dim: 64
+
+# MLA
+use_mla: true
+q_lora_rank: 256
+kv_lora_rank: 128
+qk_rope_head_dim: 32
+qk_nope_head_dim: 64
+v_head_dim: 64
+rope_theta: 10000.0
+max_position_embeddings: 4096
+rope_scaling: null
+
+# No mixture of experts. The fields below stay valid so the same code path can
+# switch to MoE later, but with use_moe: false every layer builds a dense SwiGLU.
+use_moe: false
+num_experts: 1
+num_shared_experts: 0
+num_experts_per_tok: 1
+moe_intermediate_size: 1408
+first_k_dense_replace: 0
+norm_topk_prob: true
+routed_scaling_factor: 1.0
+
+# Training
+rms_norm_eps: 1.0e-6
+initializer_range: 0.02
+tie_word_embeddings: true
+use_cache: false
+
+# No reasoning mode: at this size it only produces plausible-sounding filler.
+enable_thinking_mode: false
+max_thinking_tokens: 0
+
+# Special tokens
+bos_token_id: 1
+eos_token_id: 2
+pad_token_id: 0
+unk_token_id: 3
